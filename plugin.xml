@@ -19,8 +19,8 @@
 
   <!-- 这里指定了 js 接口层文件的路径 -->
   <js-module name="TencentILVB" src="www/ilvb.js">
-    <!-- 这里指定 window.TencentILVB 可以访问到插件的 js 接口层 -->
-    <clobbers target="TencentILVB" />
+    <!-- 这里指定 window.WebRTCAPI 可以访问到插件的 js 接口层 -->
+    <clobbers target="WebRTCAPI" />
   </js-module>
 
   <!-- 目前暂时先做 Android，iOS 会有独立的另一个 platform 节点 -->

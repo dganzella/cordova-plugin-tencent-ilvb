@@ -2,12 +2,12 @@ package cn.easecloud.cordova.tencent;
 
 import android.Manifest;
 import android.app.Activity;
-import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.util.Log;
 import android.webkit.WebView;
+import android.widget.Toast;
 
 import org.apache.cordova.*;
 
@@ -28,13 +28,6 @@ public class TencentILVB extends CordovaPlugin {
     private CordovaInterface cordova;
     private CordovaWebView webView;
 
-    /**
-     * Sets the context of the Command. This can then be used to do things like
-     * get file paths associated with the Activity.
-     *
-     * @param cordova The context of the main Activity.
-     * @param webView The CordovaWebView Cordova is running in.
-     */
     @Override
     public void initialize(CordovaInterface cordova, CordovaWebView webView) {
         super.initialize(cordova, webView);
@@ -44,55 +37,21 @@ public class TencentILVB extends CordovaPlugin {
         this.context = this.activity.getApplicationContext();
     }
 
-    /**
-     * Executes the request and returns PluginResult.
-     *
-     * @param action          The action to execute.
-     * @param args            JSONArry of arguments for the plugin.
-     * @param callbackContext The callback id used when calling back into JavaScript.
-     * @return True if the action was valid, false if not.
-     */
     @Override
     public boolean execute(String action, JSONArray data, final CallbackContext callbackContext) throws JSONException {
 
-//        this.cordova.requestPermission(this, 0, Manifest.permission.READ_CONTACTS);
-
-        if (action.equals("greet")) {
-
-            String name = data.getString(0);
-            String message = "TencentILVB, " + name;
-
-            Intent intent = new Intent(this.cordova.getActivity(), TestActivity.class);
-            this.cordova.startActivityForResult(this, intent, 0);
-
-            callbackContext.success(message);
-
-            return true;
-
-        } else if (action.equals("initSdk")) {
+		if (action.equals("init")) {
 
             int appid = data.getInt(0);
             int accountType = data.getInt(1);
             ILiveSDK.getInstance().initSdk(this.context, appid, accountType);
-            return true;
-
-        } else if (action.equals("iLiveLogin")) {
-
-            String id = data.getString(0);
-            String sig = data.getString(1);
+			
+            String id = data.getString(2);
+            String sig = data.getString(3);
+			
             ILiveLoginManager.getInstance().iLiveLogin(id, sig, new ILiveCallBack() {
                 @Override
                 public void onSuccess(Object data) {
-//                    JSONObject json = null;
-//                    try {
-//                        // object to JSONObject
-//                        // https://stackoverflow.com/a/33056323/2544762
-//                        json = (JSONObject) (new JSONTokener(data.toString()).nextValue());
-//                    } catch (JSONException e) {
-//                        e.printStackTrace();
-//                        callbackContext.error("JSON parse object fail: " + data.toString());
-//                    }
-//                    callbackContext.success(json);
                     Gson gson = new Gson();
                     callbackContext.success(gson.toJson(data));
                 }
@@ -109,41 +68,75 @@ public class TencentILVB extends CordovaPlugin {
                         callbackContext.error("ERROR: " + errMsg);
                     }
                     callbackContext.error(obj);
-//                    callbackContext.error(
-//                            "module: " + module +
-//                                    "\nerrCode: " + errCode +
-//                                    "\nerrMsg: " + errMsg
-//                    );
                 }
             });
-            return true;
+			
+			String localStreamAdd = data.getString(4);
+			String remoteStreamAdd = data.getString(5);
+			
+			System.out.println(localStreamAdd);
+			System.out.println(remoteStreamAdd);
+			
+        } else if (action.equals("createOrJoinRoom")) {
+			
+			int roomId = data.getInt(0);
+            String role = data.getString(1);
+			String hostId = data.getString(2);
+			
+			if(role.equals('LiveMaster'))
+			{
+				 //Configuration options of creating room
+				 ILiveRoomOption hostOption = new ILiveRoomOption(null).
+						controlRole("Host")//Role configuration
+						.authBits(AVRoomMulti.AUTH_BITS_DEFAULT)//Permission configuration
+						.cameraId(ILiveConstants.FRONT_CAMERA)//Front/rear-facing camera
+						.videoRecvMode(AVRoomMulti.VIDEO_RECV_MODE_SEMI_AUTO_RECV_CAMERA_VIDEO)//Whether to start semi-automatic receiving
+						.autoMic(true);
+				
+				//Create room
+				ILVLiveManager.getInstance().createRoom(room, hostOption, new ILiveCallBack() {
+					@Override
+					public void onSuccess(Object data) {
+						Toast.makeText(LiveActivity.this, "create room ok", Toast.LENGTH_SHORT).show();
+						System.out.println("Create room Data");
+						System.out.println(data);
+					}
 
-        } else if (action.equals("iLiveLogout")) {
-            return false;
-        } else if (action.equals("createRoom")) {
-            return false;
-        } else if (action.equals("joinRoom")) {
-            return false;
+					@Override
+					public void onError(String module, int errCode, String errMsg) {
+						Toast.makeText(LiveActivity.this, module + "|create fail " + errMsg + " " + errMsg, Toast.LENGTH_SHORT).show();
+					}
+				});
+			}
+			else{
+				//Configuration options of joining room
+				ILiveRoomOption memberOption = new ILiveRoomOption(hostId)
+						.autoCamera(false) //Whether to enable camera automatically
+						.controlRole("NormalMember") //Role configuration
+						.authBits(AVRoomMulti.AUTH_BITS_DEFAULT) //Permission configuration
+						.videoRecvMode(AVRoomMulti.VIDEO_RECV_MODE_SEMI_AUTO_RECV_CAMERA_VIDEO) //Whether to start semi-automatic receiving
+						.autoMic(true);//Whether to enable mic automatically
+						
+				//Join a room
+				ILVLiveManager.getInstance().joinRoom(room, memberOption, new ILiveCallBack() {
+					@Override
+					public void onSuccess(Object data) {
+						Toast.makeText(LiveActivity.this, "join room ok ", Toast.LENGTH_SHORT).show();
+						System.out.println("Join room Data");
+						System.out.println(data);	
+					}
+
+					@Override
+					public void onError(String module, int errCode, String errMsg) {
+						Toast.makeText(LiveActivity.this, module + "|join fail " + errMsg + " " + errMsg, Toast.LENGTH_SHORT).show();
+					}
+				});
+			
+			}
+		} else if (action.equals("quit")) {
         } else {
             return false;
         }
-    }
-
-    public void alert(String msg, String title) {
-
-
-        // TODO Auto-generated method stub
-
-        new AlertDialog.Builder(this.activity)
-                .setTitle(title)
-                .setMessage(msg)//设置显示的内容
-                .setPositiveButton("确定", new DialogInterface.OnClickListener() {//添加确定按钮
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {//确定按钮的响应事件
-                        // TODO Auto-generated method stub
-//                        finish();
-                    }
-                }).show();//在按键响应事件中显示此对话框
     }
 
 }
