@@ -53,7 +53,6 @@
     <!-- 源文件 -->
     <source-file src="src/android/TencentILVB.java" target-dir="src/cn/easecloud/cordova/tencent/"/>
     <source-file src="src/android/TestActivity.java" target-dir="src/cn/easecloud/cordova/tencent/"/>
-    <source-file src="src/android/res/layout/layout_test.xml" target-dir="res/layout" />
     <!-- Activity -->
     <config-file parent="/manifest/application" target="AndroidManifest.xml">
       <activity android:name="cn.easecloud.cordova.tencent.TestActivity">
