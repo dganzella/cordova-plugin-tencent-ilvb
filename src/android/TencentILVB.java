@@ -8,6 +8,9 @@ import android.content.Intent;
 import android.util.Log;
 import android.webkit.WebView;
 import android.widget.Toast;
+import com.tencent.av.sdk.AVRoomMulti;
+import com.tencent.ilivesdk.business.livebusiness.ILVLiveManager;
+
 
 import org.apache.cordova.*;
 
@@ -83,7 +86,7 @@ public class TencentILVB extends CordovaPlugin {
             String role = data.getString(1);
 			String hostId = data.getString(2);
 			
-			if(role.equals('LiveMaster'))
+			if(role.equals("LiveMaster"))
 			{
 				 //Configuration options of creating room
 				 ILiveRoomOption hostOption = new ILiveRoomOption(null).
@@ -94,17 +97,16 @@ public class TencentILVB extends CordovaPlugin {
 						.autoMic(true);
 				
 				//Create room
-				ILVLiveManager.getInstance().createRoom(room, hostOption, new ILiveCallBack() {
+				ILVLiveManager.getInstance().createRoom(roomId, hostOption, new ILiveCallBack() {
 					@Override
 					public void onSuccess(Object data) {
-						Toast.makeText(LiveActivity.this, "create room ok", Toast.LENGTH_SHORT).show();
 						System.out.println("Create room Data");
 						System.out.println(data);
 					}
 
 					@Override
 					public void onError(String module, int errCode, String errMsg) {
-						Toast.makeText(LiveActivity.this, module + "|create fail " + errMsg + " " + errMsg, Toast.LENGTH_SHORT).show();
+						System.out.println("Create room Error");
 					}
 				});
 			}
@@ -118,17 +120,16 @@ public class TencentILVB extends CordovaPlugin {
 						.autoMic(true);//Whether to enable mic automatically
 						
 				//Join a room
-				ILVLiveManager.getInstance().joinRoom(room, memberOption, new ILiveCallBack() {
+				ILVLiveManager.getInstance().joinRoom(roomId, memberOption, new ILiveCallBack() {
 					@Override
 					public void onSuccess(Object data) {
-						Toast.makeText(LiveActivity.this, "join room ok ", Toast.LENGTH_SHORT).show();
 						System.out.println("Join room Data");
 						System.out.println(data);	
 					}
 
 					@Override
 					public void onError(String module, int errCode, String errMsg) {
-						Toast.makeText(LiveActivity.this, module + "|join fail " + errMsg + " " + errMsg, Toast.LENGTH_SHORT).show();
+						System.out.println("Join room Data");
 					}
 				});
 			
