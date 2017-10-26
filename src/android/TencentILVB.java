@@ -88,7 +88,7 @@ public class TencentILVB extends CordovaPlugin {
 			if(role.equals("LiveMaster"))
 			{
 				 //Configuration options of creating room
-				 ILVLiveRoomOption hostOption = new ILiveRoomOption(null).
+				 ILVLiveRoomOption hostOption = new ILVLiveRoomOption(null).
 						controlRole("Host")//Role configuration
 						.authBits(AVRoomMulti.AUTH_BITS_DEFAULT)//Permission configuration
 						.cameraId(ILiveConstants.FRONT_CAMERA)//Front/rear-facing camera
@@ -111,7 +111,7 @@ public class TencentILVB extends CordovaPlugin {
 			}
 			else{
 				//Configuration options of joining room
-				ILVLiveRoomOption memberOption = new ILiveRoomOption(hostId)
+				ILVLiveRoomOption memberOption = new ILVLiveRoomOption(hostId)
 						.autoCamera(false) //Whether to enable camera automatically
 						.controlRole("NormalMember") //Role configuration
 						.authBits(AVRoomMulti.AUTH_BITS_DEFAULT) //Permission configuration
@@ -134,9 +134,10 @@ public class TencentILVB extends CordovaPlugin {
 			
 			}
 		} else if (action.equals("quit")) {
-        } else {
-            return false;
         }
+
+
+        return false;
     }
 
 }
