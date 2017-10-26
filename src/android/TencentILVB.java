@@ -20,6 +20,7 @@ import com.google.gson.Gson;
 
 import com.tencent.av.sdk.AVRoomMulti;
 import com.tencent.ilivesdk.*;
+import com.tencent.ilivesdk.core.*;
 import com.tencent.livesdk.*;
 
 public class TencentILVB extends CordovaPlugin {
