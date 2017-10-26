@@ -31,7 +31,7 @@ module.exports = {
             resultCallback,
             "TencentILVB",
             "createOrJoinRoom",
-            [configs.roomId, configs.role, configs.hostId]
+            [configs.roomid, configs.role, configs.hostid]
         );
     },
 	updateViews: function (openIdList, viewPositionRectList) {

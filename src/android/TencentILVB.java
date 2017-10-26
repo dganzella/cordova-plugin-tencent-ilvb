@@ -105,12 +105,24 @@ public class TencentILVB extends CordovaPlugin {
 		else if (action.equals("createOrJoinRoom"))
 		{
 			
-			int roomId = data.getInt(0);
+			Log.i("ILVB","CREATE OR JOIN ROOM");
+
+			String roomId = data.getString(0);
+			Log.i("ILVB","ROOM ID");
+			Log.i("ILVB",roomId);
+
             String role = data.getString(1);
+			Log.i("ILVB","ROLE");
+			Log.i("ILVB",role);
+
 			String hostId = data.getString(2);
+			Log.i("ILVB","HOST ID");
+			Log.i("ILVB", hostId);
 			
 			if(role.equals("LiveMaster"))
 			{
+				Log.i("ILVB","BUILD HOST OPTIONS");
+
 				 //Configuration options of creating room
 				 ILVLiveRoomOption hostOption = new ILVLiveRoomOption(null).
 						controlRole("Host")//Role configuration
@@ -119,8 +131,10 @@ public class TencentILVB extends CordovaPlugin {
 						.videoRecvMode(AVRoomMulti.VIDEO_RECV_MODE_SEMI_AUTO_RECV_CAMERA_VIDEO)//Whether to start semi-automatic receiving
 						.autoMic(true);
 				
+				Log.i("ILVB","CREATE ROOM NOW");
+
 				//Create room
-				ILVLiveManager.getInstance().createRoom(roomId, hostOption, new ILiveCallBack() {
+				ILVLiveManager.getInstance().createRoom(Integer.parseInt(roomId), hostOption, new ILiveCallBack() {
 					@Override
 					public void onSuccess(Object data) {
 						Log.i("ILVB","CREATE ROOM SUCCESS");
@@ -149,9 +163,13 @@ public class TencentILVB extends CordovaPlugin {
 						callbackContext.error(obj);
 					}
 				});
+
+				Log.i("ILVB","FINISH CREATE ROOM");
 			}
 			else
 			{
+				Log.i("ILVB","BUILD VIEWER OPTIONS");
+
 				//Configuration options of joining room
 				ILVLiveRoomOption memberOption = new ILVLiveRoomOption(hostId)
 						.autoCamera(false) //Whether to enable camera automatically
@@ -160,8 +178,10 @@ public class TencentILVB extends CordovaPlugin {
 						.videoRecvMode(AVRoomMulti.VIDEO_RECV_MODE_SEMI_AUTO_RECV_CAMERA_VIDEO) //Whether to start semi-automatic receiving
 						.autoMic(true);//Whether to enable mic automatically
 						
+				Log.i("ILVB","JOIN ROOM NOW");
+
 				//Join a room
-				ILVLiveManager.getInstance().joinRoom(roomId, memberOption, new ILiveCallBack() {
+				ILVLiveManager.getInstance().joinRoom(Integer.parseInt(roomId), memberOption, new ILiveCallBack() {
 					@Override
 					public void onSuccess(Object data) {
 						Log.i("ILVB","JOIN ROOM SUCCESS");
@@ -189,6 +209,8 @@ public class TencentILVB extends CordovaPlugin {
 						callbackContext.error(obj);
 					}
 				});
+
+				Log.i("ILVB","FINISH JOIN ROOM");
 			}
 			
 			return true;
