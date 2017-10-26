@@ -1,6 +1,6 @@
 dependencies {
-    compile 'com.tencent.livesdk: livesdk: 1.1.4'
-    compile 'com.tencent.ilivesdk: ilivesdk: 1.7.1'
+    compile 'com.tencent.ilivesdk:ilivesdk:1.7.1'
+    compile 'com.tencent.livesdk:livesdk:1.1.4'
 }
 
 android {
