@@ -30,6 +30,8 @@ public class TencentILVB extends CordovaPlugin {
     private CordovaInterface cordova;
     private CordovaWebView webView;
 
+	public CallbackContext eventCallbackContext;
+
     @Override
     public void initialize(CordovaInterface cordova, CordovaWebView webView) {
         super.initialize(cordova, webView);
@@ -40,28 +42,57 @@ public class TencentILVB extends CordovaPlugin {
     }
 
     @Override
-    public boolean execute(String action, JSONArray data, final CallbackContext callbackContext) throws JSONException {
+    public boolean execute(String action, JSONArray data, final CallbackContext callbackContext) throws JSONException
+	{
 
-		if (action.equals("init")) {
+		if (action.equals("init"))
+		{
+
+			Log.i("ILVB", "ppp");
 
             int appid = data.getInt(0);
+			Log.i("ILVB","APP ID:");
+			Log.i("ILVB",new Integer(appid).toString());
+
             int accountType = data.getInt(1);
+
+			Log.i("ILVB","ACC TYPE:");
+			Log.i("ILVB",new Integer(accountType).toString()) ;
+
             ILiveSDK.getInstance().initSdk(this.context, appid, accountType);
 			
+			Log.i("ILVB","FINISH INIT");
+
             String id = data.getString(2);
             String sig = data.getString(3);
+
+			Log.i("ILVB","ID");
+			Log.i("ILVB",id);
+
+			Log.i("ILVB","SIG");
+			Log.i("ILVB",sig);
 			
-            ILiveLoginManager.getInstance().iLiveLogin(id, sig, new ILiveCallBack() {
+            ILiveLoginManager.getInstance().iLiveLogin(id, sig, new ILiveCallBack()
+			{
                 @Override
-                public void onSuccess(Object data) {
+                public void onSuccess(Object data)
+				{
+					Log.i("ILVB","LOGIN SUCCESS");
+
                     Gson gson = new Gson();
                     callbackContext.success(gson.toJson(data));
                 }
 
                 @Override
-                public void onError(String module, int errCode, String errMsg) {
+                public void onError(String module, int errCode, String errMsg)
+				{
+					Log.i("ILVB","LOGIN ERROR");
+					Log.i("ILVB",new Integer(errCode).toString());
+					Log.i("ILVB",errMsg);
+
                     JSONObject obj = new JSONObject();
-                    try {
+                    try
+					{
                         obj.put("module", module);
                         obj.put("errCode", errCode);
                         obj.put("errMsg", errMsg);
@@ -73,13 +104,10 @@ public class TencentILVB extends CordovaPlugin {
                 }
             });
 			
-			String localStreamAdd = data.getString(4);
-			String remoteStreamAdd = data.getString(5);
-			
-			System.out.println(localStreamAdd);
-			System.out.println(remoteStreamAdd);
-			
-        } else if (action.equals("createOrJoinRoom")) {
+			return true;
+        }
+		else if (action.equals("createOrJoinRoom"))
+		{
 			
 			int roomId = data.getInt(0);
             String role = data.getString(1);
@@ -109,7 +137,8 @@ public class TencentILVB extends CordovaPlugin {
 					}
 				});
 			}
-			else{
+			else
+			{
 				//Configuration options of joining room
 				ILVLiveRoomOption memberOption = new ILVLiveRoomOption(hostId)
 						.autoCamera(false) //Whether to enable camera automatically
@@ -133,11 +162,32 @@ public class TencentILVB extends CordovaPlugin {
 				});
 			
 			}
-		} else if (action.equals("quit")) {
-        }
 
+			return true;
+		}
+		else if( action.equals( "addEvents" ))
+		{
+			eventCallbackContext = callbackContext;
+      	}
+		else if (action.equals("quit"))
+		{
+			return true;
+        }
 
         return false;
     }
 
+	public void triggerJSEvent(String type, JSONObject data )
+	{
+		JSONObject message = new JSONObject();       
+
+		try{
+			message.put("eventType", type);
+			message.put("data", data);
+		}catch (JSONException e) {}
+		
+		PluginResult myResult = new PluginResult(PluginResult.Status.OK, message);
+		myResult.setKeepCallback(true);
+		eventCallbackContext.sendPluginResult(myResult);
+	}
 }
