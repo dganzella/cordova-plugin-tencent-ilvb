@@ -11,7 +11,7 @@ module.exports = {
 		
 		window.WebRTCAPI.eventList = listenerList;
 		
-		cordova.exec(this.eventReceived,
+		cordova.exec(window.WebRTCAPI.eventReceived,
 					function(){},
 					"TencentILVB",
 					'addEvents',
