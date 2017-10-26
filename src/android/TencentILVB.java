@@ -8,6 +8,9 @@ import android.content.Intent;
 import android.util.Log;
 import android.webkit.WebView;
 import android.widget.Toast;
+import android.view.View;
+import android.view.ViewGroup;
+import android.view.LayoutInflater;
 
 import org.apache.cordova.*;
 
@@ -44,22 +47,6 @@ public class TencentILVB extends CordovaPlugin
         this.cordova = cordova;
         this.activity = cordova.getActivity();
         this.context = this.activity.getApplicationContext();
-
-		ViewGroup parent = (ViewGroup) cordova.getActivity().findViewById(android.R.id.content);
-			
-		LayoutInflater inflater = (LayoutInflater)getBaseContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-		
-		View ilvbFrameView = inflater.inflate(R.layout.ilvbview, null);
-		
-		parent.addView(ilvbFrameView);
-		
-		this.avRootView = (AVRootView) ilvbFrameView.findViewById(
-			this.context.getResources().
-			getIdentifier("av_root_view", "id", this.activity.getPackageName())
-		);
-
-		Log.i("ILVB","ROOT VIEW");
-		Log.i("ILVB",this.avRootView.toString());
     }
 
     @Override
@@ -78,11 +65,38 @@ public class TencentILVB extends CordovaPlugin
 
             ILiveSDK.getInstance().initSdk(this.context, appid, accountType);
 			ILiveRoomManager.getInstance().init(new ILiveRoomConfig());
-
-			ILVLiveManager.getInstance().init(new ILVLiveConfig());
-        	ILVLiveManager.getInstance().setAvVideoView(this.avRootView);
 			
 			Log.i("ILVB","FINISH INIT");
+
+			this.cordova.getActivity().runOnUiThread(new Runnable()
+			{
+				@Override
+				public void run()
+				{
+					ViewGroup parent = (ViewGroup) cordova.getActivity().findViewById(android.R.id.content);
+						
+					LayoutInflater inflater = (LayoutInflater)context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+					
+					View ilvbFrameView = inflater.inflate(context.getResources().
+						getIdentifier("ilvbview", "layout", activity.getPackageName()), null);
+
+					Log.i("ILVB","FRAME OF ROOT VIEW");
+					Log.i("ILVB",ilvbFrameView.toString());
+
+					parent.addView(ilvbFrameView);
+					
+					avRootView = (AVRootView) ilvbFrameView.findViewById(
+						context.getResources().
+						getIdentifier("av_root_view", "id", activity.getPackageName())
+					);
+
+					Log.i("ILVB","ROOT VIEW");
+					Log.i("ILVB",avRootView.toString());
+
+					ILVLiveManager.getInstance().init(new ILVLiveConfig());
+        			ILVLiveManager.getInstance().setAvVideoView(avRootView);
+				}
+			});
 
             String id = data.getString(2);
             String sig = data.getString(3);
