@@ -56,6 +56,7 @@ public class TencentILVB extends CordovaPlugin {
 			Log.i("ILVB",new Integer(accountType).toString()) ;
 
             ILiveSDK.getInstance().initSdk(this.context, appid, accountType);
+			ILiveRoomManager.getInstance().init(new ILiveRoomConfig());
 			
 			Log.i("ILVB","FINISH INIT");
 
@@ -118,100 +119,119 @@ public class TencentILVB extends CordovaPlugin {
 			String hostId = data.getString(2);
 			Log.i("ILVB","HOST ID");
 			Log.i("ILVB", hostId);
-			
-			if(role.equals("LiveMaster"))
+
+			class CreateOrJoinRunnable implements Runnable
 			{
-				Log.i("ILVB","BUILD HOST OPTIONS");
+				String role, hostId;
+				int roomId;
 
-				 //Configuration options of creating room
-				 ILVLiveRoomOption hostOption = new ILVLiveRoomOption(null).
-						controlRole("Host")//Role configuration
-						.authBits(AVRoomMulti.AUTH_BITS_DEFAULT)//Permission configuration
-						.cameraId(ILiveConstants.FRONT_CAMERA)//Front/rear-facing camera
-						.videoRecvMode(AVRoomMulti.VIDEO_RECV_MODE_SEMI_AUTO_RECV_CAMERA_VIDEO)//Whether to start semi-automatic receiving
-						.autoMic(true);
-				
-				Log.i("ILVB","CREATE ROOM NOW");
+				CreateOrJoinRunnable(String role, int roomId, String hostId)
+				{ 
+					this.role = role;
+					this.roomId = roomId;
+					this.hostId = hostId;
+				}
 
-				//Create room
-				ILVLiveManager.getInstance().createRoom(roomId, hostOption, new ILiveCallBack() {
-					@Override
-					public void onSuccess(Object data) {
-						Log.i("ILVB","CREATE ROOM SUCCESS");
-						Gson gson = new Gson();
-						callbackContext.success(gson.toJson(data));
-					}
+				public void run()
+				{
+					if(role.equals("LiveMaster"))
+					{
+						Log.i("ILVB","BUILD HOST OPTIONS");
 
-					@Override
-					public void onError(String module, int errCode, String errMsg) {
+						//Configuration options of creating room
+						ILVLiveRoomOption hostOption = new ILVLiveRoomOption(null).
+								controlRole("Host")//Role configuration
+								.authBits(AVRoomMulti.AUTH_BITS_DEFAULT)//Permission configuration
+								.cameraId(ILiveConstants.FRONT_CAMERA)//Front/rear-facing camera
+								.videoRecvMode(AVRoomMulti.VIDEO_RECV_MODE_SEMI_AUTO_RECV_CAMERA_VIDEO)//Whether to start semi-automatic receiving
+								.autoMic(true);
 						
-						Log.i("ILVB","CREATE ROOM ERROR");
-						Log.i("ILVB",new Integer(errCode).toString());
-						Log.i("ILVB",errMsg);
+						Log.i("ILVB","CREATE ROOM NOW");
+						Log.i("ILVB",hostOption.toString());
 
-						JSONObject obj = new JSONObject();
-						try
-						{
-							obj.put("module", module);
-							obj.put("errCode", errCode);
-							obj.put("errMsg", errMsg);
-						} catch (JSONException e) {
-							e.printStackTrace();
-							callbackContext.error("ERROR: " + errMsg);
-						}
-						
-						callbackContext.error(obj);
+						//Create room
+						ILVLiveManager.getInstance().createRoom(roomId, hostOption, new ILiveCallBack() {
+							@Override
+							public void onSuccess(Object data) {
+								Log.i("ILVB","CREATE ROOM SUCCESS");
+								Gson gson = new Gson();
+								callbackContext.success(gson.toJson(data));
+							}
+
+							@Override
+							public void onError(String module, int errCode, String errMsg) {
+								
+								Log.i("ILVB","CREATE ROOM ERROR");
+								Log.i("ILVB",new Integer(errCode).toString());
+								Log.i("ILVB",errMsg);
+
+								JSONObject obj = new JSONObject();
+								try
+								{
+									obj.put("module", module);
+									obj.put("errCode", errCode);
+									obj.put("errMsg", errMsg);
+								} catch (JSONException e) {
+									e.printStackTrace();
+									callbackContext.error("ERROR: " + errMsg);
+								}
+								
+								callbackContext.error(obj);
+							}
+						});
+
+						Log.i("ILVB","FINISH CREATE ROOM");
 					}
-				});
+					else
+					{
+						Log.i("ILVB","BUILD VIEWER OPTIONS");
 
-				Log.i("ILVB","FINISH CREATE ROOM");
-			}
-			else
-			{
-				Log.i("ILVB","BUILD VIEWER OPTIONS");
+						//Configuration options of joining room
+						ILVLiveRoomOption memberOption = new ILVLiveRoomOption(hostId)
+								.autoCamera(false) //Whether to enable camera automatically
+								.controlRole("NormalMember") //Role configuration
+								.authBits(AVRoomMulti.AUTH_BITS_DEFAULT) //Permission configuration
+								.videoRecvMode(AVRoomMulti.VIDEO_RECV_MODE_SEMI_AUTO_RECV_CAMERA_VIDEO) //Whether to start semi-automatic receiving
+								.autoMic(true);//Whether to enable mic automatically
+								
+						Log.i("ILVB","JOIN ROOM NOW");
 
-				//Configuration options of joining room
-				ILVLiveRoomOption memberOption = new ILVLiveRoomOption(hostId)
-						.autoCamera(false) //Whether to enable camera automatically
-						.controlRole("NormalMember") //Role configuration
-						.authBits(AVRoomMulti.AUTH_BITS_DEFAULT) //Permission configuration
-						.videoRecvMode(AVRoomMulti.VIDEO_RECV_MODE_SEMI_AUTO_RECV_CAMERA_VIDEO) //Whether to start semi-automatic receiving
-						.autoMic(true);//Whether to enable mic automatically
-						
-				Log.i("ILVB","JOIN ROOM NOW");
+						//Join a room
+						ILVLiveManager.getInstance().joinRoom(roomId, memberOption, new ILiveCallBack() {
+							@Override
+							public void onSuccess(Object data) {
+								Log.i("ILVB","JOIN ROOM SUCCESS");
+								Gson gson = new Gson();
+								callbackContext.success(gson.toJson(data));
+							}
 
-				//Join a room
-				ILVLiveManager.getInstance().joinRoom(Integer.parseInt(roomId), memberOption, new ILiveCallBack() {
-					@Override
-					public void onSuccess(Object data) {
-						Log.i("ILVB","JOIN ROOM SUCCESS");
-						Gson gson = new Gson();
-						callbackContext.success(gson.toJson(data));
+							@Override
+							public void onError(String module, int errCode, String errMsg) {
+								Log.i("ILVB","JOIN ROOM ERROR");
+								Log.i("ILVB",new Integer(errCode).toString());
+								Log.i("ILVB",errMsg);
+
+								JSONObject obj = new JSONObject();
+								try
+								{
+									obj.put("module", module);
+									obj.put("errCode", errCode);
+									obj.put("errMsg", errMsg);
+								} catch (JSONException e) {
+									e.printStackTrace();
+									callbackContext.error("ERROR: " + errMsg);
+								}
+								
+								callbackContext.error(obj);
+							}
+						});
+
+						Log.i("ILVB","FINISH JOIN ROOM");
 					}
+				}
+			}	
 
-					@Override
-					public void onError(String module, int errCode, String errMsg) {
-						Log.i("ILVB","JOIN ROOM ERROR");
-						Log.i("ILVB",new Integer(errCode).toString());
-						Log.i("ILVB",errMsg);
-
-						JSONObject obj = new JSONObject();
-						try
-						{
-							obj.put("module", module);
-							obj.put("errCode", errCode);
-							obj.put("errMsg", errMsg);
-						} catch (JSONException e) {
-							e.printStackTrace();
-							callbackContext.error("ERROR: " + errMsg);
-						}
-						
-						callbackContext.error(obj);
-					}
-				});
-
-				Log.i("ILVB","FINISH JOIN ROOM");
-			}
+			cordova.getActivity().runOnUiThread(new CreateOrJoinRunnable(role, roomId, hostId));
 			
 			return true;
 		}
