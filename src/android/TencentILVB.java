@@ -22,8 +22,12 @@ import com.tencent.av.sdk.AVRoomMulti;
 import com.tencent.ilivesdk.*;
 import com.tencent.ilivesdk.core.*;
 import com.tencent.livesdk.*;
+import com.tencent.ilivesdk.view.*;
+import com.tencent.livesdk.ILVLiveConfig;
 
 public class TencentILVB extends CordovaPlugin {
+
+	AVRootView avRootView;
 
     private Context context;
     private Activity activity;
@@ -39,6 +43,14 @@ public class TencentILVB extends CordovaPlugin {
         this.cordova = cordova;
         this.activity = cordova.getActivity();
         this.context = this.activity.getApplicationContext();
+
+		this.avRootView = (AVRootView) this.activity.findViewById(
+			this.context.getResources().
+			getIdentifier("av_root_view", "id", this.activity.getPackageName())
+																);
+
+		Log.i("ILVB","ROOT VIEW");
+		Log.i("ILVB",this.avRootView.toString());
     }
 
     @Override
@@ -57,6 +69,9 @@ public class TencentILVB extends CordovaPlugin {
 
             ILiveSDK.getInstance().initSdk(this.context, appid, accountType);
 			ILiveRoomManager.getInstance().init(new ILiveRoomConfig());
+
+			ILVLiveManager.getInstance().init(new ILVLiveConfig());
+        	ILVLiveManager.getInstance().setAvVideoView(this.avRootView);
 			
 			Log.i("ILVB","FINISH INIT");
 
