@@ -107,9 +107,9 @@ public class TencentILVB extends CordovaPlugin {
 			
 			Log.i("ILVB","CREATE OR JOIN ROOM");
 
-			String roomId = data.getString(0);
+			int roomId = data.getInt(0);
 			Log.i("ILVB","ROOM ID");
-			Log.i("ILVB",roomId);
+			Log.i("ILVB",new Integer(roomId).toString());
 
             String role = data.getString(1);
 			Log.i("ILVB","ROLE");
@@ -134,7 +134,7 @@ public class TencentILVB extends CordovaPlugin {
 				Log.i("ILVB","CREATE ROOM NOW");
 
 				//Create room
-				ILVLiveManager.getInstance().createRoom(Integer.parseInt(roomId), hostOption, new ILiveCallBack() {
+				ILVLiveManager.getInstance().createRoom(roomId, hostOption, new ILiveCallBack() {
 					@Override
 					public void onSuccess(Object data) {
 						Log.i("ILVB","CREATE ROOM SUCCESS");
