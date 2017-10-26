@@ -8,9 +8,6 @@ import android.content.Intent;
 import android.util.Log;
 import android.webkit.WebView;
 import android.widget.Toast;
-import com.tencent.av.sdk.AVRoomMulti;
-import com.tencent.ilivesdk.business.livebusiness.ILVLiveManager;
-
 
 import org.apache.cordova.*;
 
@@ -21,8 +18,9 @@ import org.json.JSONTokener;
 
 import com.google.gson.Gson;
 
+import com.tencent.av.sdk.AVRoomMulti;
 import com.tencent.ilivesdk.*;
-import com.tencent.ilivesdk.core.*;
+import com.tencent.livesdk.*;
 
 public class TencentILVB extends CordovaPlugin {
 
