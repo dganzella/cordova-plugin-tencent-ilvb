@@ -25,8 +25,8 @@ import com.tencent.livesdk.*;
 import com.tencent.ilivesdk.view.*;
 import com.tencent.livesdk.ILVLiveConfig;
 
-public class TencentILVB extends CordovaPlugin {
-
+public class TencentILVB extends CordovaPlugin
+{
 	AVRootView avRootView;
 
     private Context context;
@@ -37,17 +37,26 @@ public class TencentILVB extends CordovaPlugin {
 	public CallbackContext eventCallbackContext;
 
     @Override
-    public void initialize(CordovaInterface cordova, CordovaWebView webView) {
+    public void initialize(CordovaInterface cordova, CordovaWebView webView)
+	{
         super.initialize(cordova, webView);
         this.webView = webView;
         this.cordova = cordova;
         this.activity = cordova.getActivity();
         this.context = this.activity.getApplicationContext();
 
-		this.avRootView = (AVRootView) this.activity.findViewById(
+		ViewGroup parent = (ViewGroup) cordova.getActivity().findViewById(android.R.id.content);
+			
+		LayoutInflater inflater = (LayoutInflater)getBaseContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+		
+		View ilvbFrameView = inflater.inflate(R.layout.ilvbview, null);
+		
+		parent.addView(ilvbFrameView);
+		
+		this.avRootView = (AVRootView) ilvbFrameView.findViewById(
 			this.context.getResources().
 			getIdentifier("av_root_view", "id", this.activity.getPackageName())
-																);
+		);
 
 		Log.i("ILVB","ROOT VIEW");
 		Log.i("ILVB",this.avRootView.toString());
