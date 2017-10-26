@@ -33,8 +33,6 @@
     </config-file>
 
     <framework src="src/android/custom.gradle" custom="true" type="gradleReference"/>
-    <resource-file src="aar/ilivesdk-1.5.0.aar" target="aar/ilivesdk-1.5.0.aar"/>
-    <resource-file src="aar/livesdk-1.1.1.aar" target="aar/livesdk-1.1.1.aar"/>
 
     <!-- 腾讯直播 SDK -->
     <source-file src="src/android/libs/cos-sdk-android-1.4.3.jar" target-dir="libs" />
