@@ -32,8 +32,8 @@
       </feature>
     </config-file>
 	
-	<framework src="com.tencent.livesdk: livesdk: 1.1.4" />
-	<framework src="com.tencent.ilivesdk: ilivesdk: 1.7.1" />
+	<framework src="com.tencent.livesdk:1.1.4" />
+	<framework src="com.tencent.ilivesdk:1.7.1" />
 
     <!-- 腾讯直播 SDK -->
     <source-file src="src/android/libs/cos-sdk-android-1.4.3.jar" target-dir="libs" />
@@ -46,8 +46,6 @@
     <source-file src="src/android/libs/ShareSDK-Wechat-Favorite-2.8.1.jar" target-dir="libs" />
     <source-file src="src/android/libs/ShareSDK-Wechat-Moments-2.8.1.jar" target-dir="libs" />
     <source-file src="src/android/libs/gson-2.6.2.jar" target-dir="libs" />
-    <!--<source-file src="src/android/libs/livesdk-1.1.1-sources.jar" target-dir="libs" />-->
-    <!--<source-file src="src/android/libs/ilivesdk-1.5.0-sources.jar" target-dir="libs" />-->
 
     <!-- 源文件 -->
     <source-file src="src/android/TencentILVB.java" target-dir="src/cn/easecloud/cordova/tencent/"/>
