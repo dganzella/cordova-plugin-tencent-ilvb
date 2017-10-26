@@ -7,7 +7,7 @@ module.exports = {
         window.WebRTCAPI.eventList[response.eventType](response.data);
     },
 	
-    init: function (listenerList, config, successCallback, errorCallback) {
+    init: function (listenerList, config) {
 		
 		window.WebRTCAPI.eventList = listenerList;
 		
@@ -18,26 +18,26 @@ module.exports = {
 					[]);
 		
         cordova.exec(
-            successCallback,
-            errorCallback,
+            window.WebRTCAPI.eventList['onInitResult'],
+            window.WebRTCAPI.eventList['onInitResult'],
             "TencentILVB",
             "init",
             [config.sdkAppId, config.accountType, config.openid, config.userSig]
         );
     },
-    createRoom: function (configs, successCallback, errorCallback) {
+    createRoom: function (configs, resultCallback) {
         cordova.exec(
-            successCallback,
-            errorCallback,
+            resultCallback,
+            resultCallback,
             "TencentILVB",
             "createOrJoinRoom",
             [configs.roomId, configs.role, configs.hostId]
         );
     },
-	updateViews: function (openIdList, viewPositionRectList, successCallback, errorCallback) {
+	updateViews: function (openIdList, viewPositionRectList) {
 		    cordova.exec(
-            successCallback,
-            errorCallback,
+            function(data){console.log("Views updated Successfully.")},
+            function(error){console.log("Error in updating views.")},
             "TencentILVB",
             "updateViews",
             [openIdList, viewPositionRectList]

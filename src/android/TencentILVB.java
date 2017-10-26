@@ -44,12 +44,8 @@ public class TencentILVB extends CordovaPlugin {
     @Override
     public boolean execute(String action, JSONArray data, final CallbackContext callbackContext) throws JSONException
 	{
-
 		if (action.equals("init"))
 		{
-
-			Log.i("ILVB", "ppp");
-
             int appid = data.getInt(0);
 			Log.i("ILVB","APP ID:");
 			Log.i("ILVB",new Integer(appid).toString());
@@ -127,13 +123,30 @@ public class TencentILVB extends CordovaPlugin {
 				ILVLiveManager.getInstance().createRoom(roomId, hostOption, new ILiveCallBack() {
 					@Override
 					public void onSuccess(Object data) {
-						System.out.println("Create room Data");
-						System.out.println(data);
+						Log.i("ILVB","CREATE ROOM SUCCESS");
+						Gson gson = new Gson();
+						callbackContext.success(gson.toJson(data));
 					}
 
 					@Override
 					public void onError(String module, int errCode, String errMsg) {
-						System.out.println("Create room Error");
+						
+						Log.i("ILVB","CREATE ROOM ERROR");
+						Log.i("ILVB",new Integer(errCode).toString());
+						Log.i("ILVB",errMsg);
+
+						JSONObject obj = new JSONObject();
+						try
+						{
+							obj.put("module", module);
+							obj.put("errCode", errCode);
+							obj.put("errMsg", errMsg);
+						} catch (JSONException e) {
+							e.printStackTrace();
+							callbackContext.error("ERROR: " + errMsg);
+						}
+						
+						callbackContext.error(obj);
 					}
 				});
 			}
@@ -151,23 +164,40 @@ public class TencentILVB extends CordovaPlugin {
 				ILVLiveManager.getInstance().joinRoom(roomId, memberOption, new ILiveCallBack() {
 					@Override
 					public void onSuccess(Object data) {
-						System.out.println("Join room Data");
-						System.out.println(data);	
+						Log.i("ILVB","JOIN ROOM SUCCESS");
+						Gson gson = new Gson();
+						callbackContext.success(gson.toJson(data));
 					}
 
 					@Override
 					public void onError(String module, int errCode, String errMsg) {
-						System.out.println("Join room Data");
+						Log.i("ILVB","JOIN ROOM ERROR");
+						Log.i("ILVB",new Integer(errCode).toString());
+						Log.i("ILVB",errMsg);
+
+						JSONObject obj = new JSONObject();
+						try
+						{
+							obj.put("module", module);
+							obj.put("errCode", errCode);
+							obj.put("errMsg", errMsg);
+						} catch (JSONException e) {
+							e.printStackTrace();
+							callbackContext.error("ERROR: " + errMsg);
+						}
+						
+						callbackContext.error(obj);
 					}
 				});
-			
 			}
-
+			
 			return true;
 		}
 		else if( action.equals( "addEvents" ))
 		{
 			eventCallbackContext = callbackContext;
+			
+			return true;
       	}
 		else if (action.equals("quit"))
 		{
