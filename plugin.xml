@@ -32,8 +32,8 @@
       </feature>
     </config-file>
 	
-	<framework src="com.tencent.livesdk:1.1.4" />
-	<framework src="com.tencent.ilivesdk:1.7.1" />
+	<framework src="com.tencent.livesdk" />
+	<framework src="com.tencent.ilivesdk" />
 
     <!-- 腾讯直播 SDK -->
     <source-file src="src/android/libs/cos-sdk-android-1.4.3.jar" target-dir="libs" />
