@@ -35,12 +35,16 @@ module.exports = {
         );
     },
 	updateViews: function (openIdList, domList) {
-		    cordova.exec(
-            function(data){console.log("Views updated Successfully.")},
-            function(error){console.log("Error in updating views.")},
-            "TencentILVB",
-            "updateViews",
-            [openIdList, viewPositionRectList]
-        );
+
+        for(let i = 0; i < domList.length; i++){
+            let rect = domList[i].getBoundingClientRect();
+
+            cordova.exec(
+                function(data){console.log("View updated Successfully." + data)},
+                function(error){console.log("Error in updating view." + error)},
+                "TencentILVB",
+                "updateView",
+                [openIdList[i], rect.top, rect.left, rect.width, rect.height, window.devicePixelRatio]);
+        }
 	}
 };

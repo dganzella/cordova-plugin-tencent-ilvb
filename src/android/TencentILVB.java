@@ -22,11 +22,13 @@ import org.json.JSONTokener;
 import com.google.gson.Gson;
 
 import com.tencent.av.sdk.AVRoomMulti;
+import com.tencent.av.sdk.AVView;
 import com.tencent.ilivesdk.*;
 import com.tencent.ilivesdk.core.*;
 import com.tencent.livesdk.*;
 import com.tencent.ilivesdk.view.*;
 import com.tencent.livesdk.ILVLiveConfig;
+import com.tencent.ilivesdk.view.AVVideoView;
 
 public class TencentILVB extends CordovaPlugin
 {
@@ -83,7 +85,9 @@ public class TencentILVB extends CordovaPlugin
 					Log.i("ILVB","FRAME OF ROOT VIEW");
 					Log.i("ILVB",ilvbFrameView.toString());
 
-					parent.addView(ilvbFrameView);
+					parent.addView(ilvbFrameView, 0);
+
+					ilvbFrameView.setBackgroundColor(0xFFFFFFFF);
 					
 					avRootView = (AVRootView) ilvbFrameView.findViewById(
 						context.getResources().
@@ -95,6 +99,7 @@ public class TencentILVB extends CordovaPlugin
 
 					ILVLiveManager.getInstance().init(new ILVLiveConfig());
         			ILVLiveManager.getInstance().setAvVideoView(avRootView);
+					avRootView.getVideoGroup().setBackgroundColor(0xFFFFFFFF);
 				}
 			});
 
@@ -280,6 +285,74 @@ public class TencentILVB extends CordovaPlugin
 			
 			return true;
       	}
+		else if(action.equals("updateView"))
+		{
+			String openid = data.getString(0);
+
+			Log.i("ILVB","VIEW TO UPDATE: ");
+			Log.i("ILVB",openid);
+
+			int top = data.getInt(1);
+			int left = data.getInt(2);
+			int width = data.getInt(3);
+			int height = data.getInt(4);
+			double ratio = data.getDouble(5);
+
+			Log.i("ILVB","TOP");
+			Log.i("ILVB",new Integer(top).toString());
+
+			Log.i("ILVB","LEFT");
+			Log.i("ILVB",new Integer(left).toString());
+
+			Log.i("ILVB","WIDTH");
+			Log.i("ILVB",new Integer(width).toString());
+
+			Log.i("ILVB","HEIGHT");
+			Log.i("ILVB",new Integer(height).toString());
+
+			Log.i("ILVB","RATIO");
+			Log.i("ILVB",new Double(ratio).toString());
+
+			class UpdateViewRunnable implements Runnable
+			{
+				String openid;
+				int top, left, width, height;
+				double ratio;
+
+				UpdateViewRunnable(String openid, int top,int left,int width,int height, double ratio)
+				{ 
+					this.openid = openid;
+					this.top = top;
+					this.left = left;
+					this.width = width;
+					this.height = height;
+					this.ratio = ratio;
+				}
+
+				public void run()
+				{
+					AVVideoView videoview = avRootView.getUserAvVideoView(openid, AVView.VIDEO_SRC_TYPE_CAMERA);
+
+					if(videoview != null)
+					{
+						Log.i("ILVB","FOUND CORRECT VIEW TO UPDATE");
+
+						videoview.setPosTop((int)(top * ratio));
+						videoview.setPosLeft((int)(left * ratio));
+						videoview.setPosWidth((int)(width * ratio));
+						videoview.setPosHeight((int)(height * ratio));
+						videoview.setBackgroundColor(0xFFFFFFFF);
+						videoview.autoLayout();
+
+						Log.i("ILVB","FINISHED UPDATE");
+					}
+				}
+			}
+
+			cordova.getActivity().runOnUiThread(new UpdateViewRunnable(openid, top, left, width, height, ratio));
+
+			return true;
+		}
 		else if (action.equals("quit"))
 		{
 			return true;
