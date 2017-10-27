@@ -34,7 +34,7 @@ module.exports = {
             [configs.roomid, configs.role, configs.hostid]
         );
     },
-	updateViews: function (openIdList, viewPositionRectList) {
+	updateViews: function (openIdList, domList) {
 		    cordova.exec(
             function(data){console.log("Views updated Successfully.")},
             function(error){console.log("Error in updating views.")},

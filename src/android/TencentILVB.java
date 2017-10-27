@@ -179,10 +179,11 @@ public class TencentILVB extends CordovaPlugin
 						//Configuration options of creating room
 						ILVLiveRoomOption hostOption = new ILVLiveRoomOption(null).
 								controlRole("Host")//Role configuration
-								.authBits(AVRoomMulti.AUTH_BITS_DEFAULT)//Permission configuration
-								.cameraId(ILiveConstants.FRONT_CAMERA)//Front/rear-facing camera
-								.videoRecvMode(AVRoomMulti.VIDEO_RECV_MODE_SEMI_AUTO_RECV_CAMERA_VIDEO)//Whether to start semi-automatic receiving
-								.autoMic(true);
+								.authBits(AVRoomMulti.AUTH_BITS_DEFAULT)
+								.cameraId(ILiveConstants.FRONT_CAMERA)
+								.videoRecvMode(AVRoomMulti.VIDEO_RECV_MODE_SEMI_AUTO_RECV_CAMERA_VIDEO)
+								.autoMic(true)
+								.autoCamera(true);
 						
 						Log.i("ILVB","CREATE ROOM NOW");
 						Log.i("ILVB",hostOption.toString());
@@ -226,11 +227,11 @@ public class TencentILVB extends CordovaPlugin
 
 						//Configuration options of joining room
 						ILVLiveRoomOption memberOption = new ILVLiveRoomOption(hostId)
-								.autoCamera(false) //Whether to enable camera automatically
-								.controlRole("NormalMember") //Role configuration
-								.authBits(AVRoomMulti.AUTH_BITS_DEFAULT) //Permission configuration
-								.videoRecvMode(AVRoomMulti.VIDEO_RECV_MODE_SEMI_AUTO_RECV_CAMERA_VIDEO) //Whether to start semi-automatic receiving
-								.autoMic(true);//Whether to enable mic automatically
+								.controlRole("NormalMember")
+								.authBits(AVRoomMulti.AUTH_BITS_DEFAULT)
+								.videoRecvMode(AVRoomMulti.VIDEO_RECV_MODE_SEMI_AUTO_RECV_CAMERA_VIDEO)
+								.autoMic(true)
+								.autoCamera(true);
 								
 						Log.i("ILVB","JOIN ROOM NOW");
 
