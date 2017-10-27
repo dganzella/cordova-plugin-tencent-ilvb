@@ -30,6 +30,8 @@ import com.tencent.ilivesdk.view.*;
 import com.tencent.livesdk.ILVLiveConfig;
 import com.tencent.ilivesdk.view.AVVideoView;
 
+import java.util.ArrayList;
+
 public class TencentILVB extends CordovaPlugin
 {
 	AVRootView avRootView;
@@ -100,6 +102,38 @@ public class TencentILVB extends CordovaPlugin
 					ILVLiveManager.getInstance().init(new ILVLiveConfig());
         			ILVLiveManager.getInstance().setAvVideoView(avRootView);
 					avRootView.getVideoGroup().setBackgroundColor(0xFFFFFFFF);
+
+					avRootView.setSubCreatedListener(new AVRootView.onSubViewCreatedListener() {
+
+						JSONObject eventData = new JSONObject();
+						ArrayList<String> openIdList = new ArrayList<String>();
+
+						@Override
+						public void onSubViewCreated() {
+							//this will warn the front end to update the view with the correct position
+							JSONObject eventData = new JSONObject();
+							
+							for (int i = 0; i < ILiveConstants.MAX_AV_VIDEO_NUM; i++)
+							{
+								AVVideoView avVideoView = avRootView.getViewByIndex(i);
+								String openid = avVideoView.getIdentifier();
+
+								if(openid != null){
+									//actually a valid view
+									JSONObject stream = new JSONObject();
+	
+									openIdList.add(openid);
+								}
+							}
+
+							try
+							{
+								eventData.put("openidlist", new JSONArray(openIdList));
+							} catch (JSONException e) {}
+
+							triggerJSEvent("onMobileUpdateStreams", eventData);
+						}
+					});
 				}
 			});
 
@@ -183,7 +217,7 @@ public class TencentILVB extends CordovaPlugin
 
 						//Configuration options of creating room
 						ILVLiveRoomOption hostOption = new ILVLiveRoomOption(null).
-								controlRole("Host")//Role configuration
+								controlRole(role)//Role configuration
 								.authBits(AVRoomMulti.AUTH_BITS_DEFAULT)
 								.cameraId(ILiveConstants.FRONT_CAMERA)
 								.videoRecvMode(AVRoomMulti.VIDEO_RECV_MODE_SEMI_AUTO_RECV_CAMERA_VIDEO)
@@ -232,7 +266,7 @@ public class TencentILVB extends CordovaPlugin
 
 						//Configuration options of joining room
 						ILVLiveRoomOption memberOption = new ILVLiveRoomOption(hostId)
-								.controlRole("NormalMember")
+								.controlRole(role)
 								.authBits(AVRoomMulti.AUTH_BITS_DEFAULT)
 								.videoRecvMode(AVRoomMulti.VIDEO_RECV_MODE_SEMI_AUTO_RECV_CAMERA_VIDEO)
 								.autoMic(true)
