@@ -173,6 +173,13 @@ public class TencentILVB extends CordovaPlugin implements ILiveMemStatusLisenter
 							for (int i = 0; i < ILiveConstants.MAX_AV_VIDEO_NUM; i++)
 							{
 								AVVideoView avVideoView = avRootView.getViewByIndex(i);
+
+								if( avVideoView.getIdentifier() == null)
+								{
+									avVideoView.setPosTop(99999);
+									avVideoView.setPosLeft(99999);
+								}
+
 								avVideoView.setRecvFirstFrameListener(new AVVideoView.RecvFirstFrameListener()
 								{
 									@Override
