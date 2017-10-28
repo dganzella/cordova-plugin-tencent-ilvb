@@ -21,6 +21,8 @@ import org.json.JSONTokener;
 
 import com.google.gson.Gson;
 
+
+import com.tencent.*;
 import com.tencent.av.sdk.AVRoomMulti;
 import com.tencent.av.sdk.AVView;
 import com.tencent.ilivesdk.*;
@@ -29,10 +31,18 @@ import com.tencent.livesdk.*;
 import com.tencent.ilivesdk.view.*;
 import com.tencent.livesdk.ILVLiveConfig;
 import com.tencent.ilivesdk.view.AVVideoView;
+import com.tencent.ilivesdk.ILiveMemStatusLisenter;
+import com.tencent.ilivesdk.data.ILiveMessage;
+import com.tencent.ilivesdk.data.msg.ILiveOtherMessage;
+import com.tencent.ilivesdk.listener.*;
+import com.tencent.ilivesdk.core.impl.*;
 
+import android.graphics.Rect;
+import java.util.HashMap;
 import java.util.ArrayList;
+import java.lang.reflect.*;
 
-public class TencentILVB extends CordovaPlugin
+public class TencentILVB extends CordovaPlugin implements ILiveMemStatusLisenter
 {
 	AVRootView avRootView;
 
@@ -40,8 +50,10 @@ public class TencentILVB extends CordovaPlugin
     private Activity activity;
     private CordovaInterface cordova;
     private CordovaWebView webView;
+	private HashMap<String, Rect> viewPositions;
 
 	public CallbackContext eventCallbackContext;
+	public TencentILVB selfRef;
 
     @Override
     public void initialize(CordovaInterface cordova, CordovaWebView webView)
@@ -51,7 +63,57 @@ public class TencentILVB extends CordovaPlugin
         this.cordova = cordova;
         this.activity = cordova.getActivity();
         this.context = this.activity.getApplicationContext();
+		this.selfRef = this;
+		viewPositions = new HashMap<String, Rect>();
     }
+
+    @Override
+    public boolean onEndpointsUpdateInfo(int eventid, String[] updateList)
+	{
+        Log.i("ILVB","ENDPOINTS UPDATED");
+
+		for (String id : updateList)
+		{
+			Log.i("ILVB","LIST");
+			Log.i("ILVB",id);
+			Log.i("ILVB",new Integer(eventid).toString());
+
+			JSONObject eventData = new JSONObject();
+
+			try
+			{
+				eventData.put("openid", id);
+			} catch (JSONException e) {}
+
+			switch (eventid)
+			{
+				case ILiveConstants.TYPE_MEMBER_CHANGE_HAS_CAMERA_VIDEO:
+
+					if(id.equals(ILiveLoginManager.getInstance().getMyUserId()))
+					{
+						triggerJSEvent("onLocalStreamAdd", eventData);
+					}
+					else
+					{
+						triggerJSEvent("onUpdateRemoteStream", eventData);
+					}
+					
+				break;
+
+				case ILiveConstants.TYPE_MEMBER_CHANGE_NO_CAMERA_VIDEO:
+
+					if(!id.equals(ILiveLoginManager.getInstance().getMyUserId()))
+					{
+						triggerJSEvent("onRemoteStreamRemove", eventData);
+					}
+					
+				break;
+			}
+		}
+
+		return false;
+	}
+
 
     @Override
     public boolean execute(String action, JSONArray data, final CallbackContext callbackContext) throws JSONException
@@ -68,8 +130,7 @@ public class TencentILVB extends CordovaPlugin
 			Log.i("ILVB",new Integer(accountType).toString()) ;
 
             ILiveSDK.getInstance().initSdk(this.context, appid, accountType);
-			ILiveRoomManager.getInstance().init(new ILiveRoomConfig());
-			
+
 			Log.i("ILVB","FINISH INIT");
 
 			this.cordova.getActivity().runOnUiThread(new Runnable()
@@ -100,43 +161,33 @@ public class TencentILVB extends CordovaPlugin
 					Log.i("ILVB",avRootView.toString());
 
 					ILVLiveManager.getInstance().init(new ILVLiveConfig());
+
         			ILVLiveManager.getInstance().setAvVideoView(avRootView);
 					avRootView.getVideoGroup().setBackgroundColor(0xFFFFFFFF);
 
-					avRootView.setSubCreatedListener(new AVRootView.onSubViewCreatedListener() {
-
-						JSONObject eventData = new JSONObject();
-						ArrayList<String> openIdList = new ArrayList<String>();
-
+					avRootView.setSubCreatedListener(new AVRootView.onSubViewCreatedListener()
+					{
 						@Override
-						public void onSubViewCreated() {
-							//this will warn the front end to update the view with the correct position
-							JSONObject eventData = new JSONObject();
-							
+						public void onSubViewCreated()
+						{
 							for (int i = 0; i < ILiveConstants.MAX_AV_VIDEO_NUM; i++)
 							{
 								AVVideoView avVideoView = avRootView.getViewByIndex(i);
-								String openid = avVideoView.getIdentifier();
-
-								if(openid != null){
-									//actually a valid view
-									JSONObject stream = new JSONObject();
-	
-									openIdList.add(openid);
-								}
+								avVideoView.setRecvFirstFrameListener(new AVVideoView.RecvFirstFrameListener()
+								{
+									@Override
+									public void onFirstFrameRecved(int width, int height, int angle, String identifier)
+									{
+										Log.i("ILVB","FIRST FRAME LISTENER");
+										doUpdateView(identifier);
+									}
+								});
 							}
-
-							try
-							{
-								eventData.put("openidlist", new JSONArray(openIdList));
-							} catch (JSONException e) {}
-
-							triggerJSEvent("onMobileUpdateStreams", eventData);
 						}
 					});
 				}
 			});
-
+	
             String id = data.getString(2);
             String sig = data.getString(3);
 
@@ -222,7 +273,8 @@ public class TencentILVB extends CordovaPlugin
 								.cameraId(ILiveConstants.FRONT_CAMERA)
 								.videoRecvMode(AVRoomMulti.VIDEO_RECV_MODE_SEMI_AUTO_RECV_CAMERA_VIDEO)
 								.autoMic(true)
-								.autoCamera(true);
+								.autoCamera(true)
+								.setRoomMemberStatusLisenter(selfRef);
 						
 						Log.i("ILVB","CREATE ROOM NOW");
 						Log.i("ILVB",hostOption.toString());
@@ -232,6 +284,7 @@ public class TencentILVB extends CordovaPlugin
 							@Override
 							public void onSuccess(Object data) {
 								Log.i("ILVB","CREATE ROOM SUCCESS");
+
 								Gson gson = new Gson();
 								callbackContext.success(gson.toJson(data));
 							}
@@ -270,7 +323,8 @@ public class TencentILVB extends CordovaPlugin
 								.authBits(AVRoomMulti.AUTH_BITS_DEFAULT)
 								.videoRecvMode(AVRoomMulti.VIDEO_RECV_MODE_SEMI_AUTO_RECV_CAMERA_VIDEO)
 								.autoMic(true)
-								.autoCamera(true);
+								.autoCamera(true)
+								.setRoomMemberStatusLisenter(selfRef);
 								
 						Log.i("ILVB","JOIN ROOM NOW");
 
@@ -279,6 +333,7 @@ public class TencentILVB extends CordovaPlugin
 							@Override
 							public void onSuccess(Object data) {
 								Log.i("ILVB","JOIN ROOM SUCCESS");
+
 								Gson gson = new Gson();
 								callbackContext.success(gson.toJson(data));
 							}
@@ -347,43 +402,11 @@ public class TencentILVB extends CordovaPlugin
 			Log.i("ILVB","RATIO");
 			Log.i("ILVB",new Double(ratio).toString());
 
-			class UpdateViewRunnable implements Runnable
-			{
-				String openid;
-				int top, left, width, height;
-				double ratio;
+			Rect r = new Rect((int)(left * ratio), (int)(top * ratio), (int)(left * ratio) + (int)(width * ratio),  (int)(top * ratio) + (int)(height * ratio)  );
 
-				UpdateViewRunnable(String openid, int top,int left,int width,int height, double ratio)
-				{ 
-					this.openid = openid;
-					this.top = top;
-					this.left = left;
-					this.width = width;
-					this.height = height;
-					this.ratio = ratio;
-				}
+			viewPositions.put(openid, r);
 
-				public void run()
-				{
-					AVVideoView videoview = avRootView.getUserAvVideoView(openid, AVView.VIDEO_SRC_TYPE_CAMERA);
-
-					if(videoview != null)
-					{
-						Log.i("ILVB","FOUND CORRECT VIEW TO UPDATE");
-
-						videoview.setPosTop((int)(top * ratio));
-						videoview.setPosLeft((int)(left * ratio));
-						videoview.setPosWidth((int)(width * ratio));
-						videoview.setPosHeight((int)(height * ratio));
-						videoview.setBackgroundColor(0xFFFFFFFF);
-						videoview.autoLayout();
-
-						Log.i("ILVB","FINISHED UPDATE");
-					}
-				}
-			}
-
-			cordova.getActivity().runOnUiThread(new UpdateViewRunnable(openid, top, left, width, height, ratio));
+			doUpdateView(openid);
 
 			return true;
 		}
@@ -407,5 +430,56 @@ public class TencentILVB extends CordovaPlugin
 		PluginResult myResult = new PluginResult(PluginResult.Status.OK, message);
 		myResult.setKeepCallback(true);
 		eventCallbackContext.sendPluginResult(myResult);
+	}
+
+	public void doUpdateView(String openid)
+	{
+		class UpdateViewRunnable implements Runnable
+		{
+			String openid;
+
+			UpdateViewRunnable(String openid)
+			{ 
+				this.openid = openid;
+			}
+
+			public void run()
+			{
+				for (int i = 0; i < ILiveConstants.MAX_AV_VIDEO_NUM; i++)
+				{
+					AVVideoView avVideoView = avRootView.getViewByIndex(i);
+					String openid = avVideoView.getIdentifier();
+
+					if(openid != null)
+					{
+						Log.i("ILVB","FOUND VIEW WITH ID");
+						Log.i("ILVB",openid);
+					}
+				}
+
+				AVVideoView videoview = avRootView.getUserAvVideoView(openid, AVView.VIDEO_SRC_TYPE_CAMERA);
+
+				if(videoview != null)
+				{
+					Log.i("ILVB","FOUND CORRECT VIEW TO UPDATE");
+
+					if(viewPositions.containsKey(this.openid))
+					{
+						Rect r = viewPositions.get(this.openid);
+
+						videoview.setPosTop(r.top);
+						videoview.setPosLeft(r.left);
+						videoview.setPosWidth(r.width());
+						videoview.setPosHeight(r.height());
+						videoview.setBackgroundColor(0xFFFFFFFF);
+						videoview.autoLayout();
+					}
+
+					Log.i("ILVB","FINISHED UPDATE");
+				}
+			}
+		}
+
+		cordova.getActivity().runOnUiThread(new UpdateViewRunnable(openid));
 	}
 }
