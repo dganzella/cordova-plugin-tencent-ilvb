@@ -421,30 +421,42 @@ public class TencentILVB extends CordovaPlugin implements ILiveMemStatusLisenter
 		}
 		else if (action.equals("quit"))
 		{
-			ILVLiveManager.getInstance().quitRoom(new ILiveCallBack()
+			this.cordova.getActivity().runOnUiThread(new Runnable()
 			{
 				@Override
-				public void onSuccess(Object data)
+				public void run()
 				{
-					Gson gson = new Gson();
-					callbackContext.success(gson.toJson(data));
-				}
-
-				@Override
-				public void onError(String module, int errCode, String errMsg)
-				{
-					JSONObject obj = new JSONObject();
-					try
+					ILVLiveManager.getInstance().quitRoom(new ILiveCallBack()
 					{
-						obj.put("module", module);
-						obj.put("errCode", errCode);
-						obj.put("errMsg", errMsg);
-					} catch (JSONException e) {
-						e.printStackTrace();
-						callbackContext.error("ERROR: " + errMsg);
-					}
-					
-					callbackContext.error(obj);
+						@Override
+						public void onSuccess(Object data)
+						{
+							Gson gson = new Gson();
+							callbackContext.success(gson.toJson(data));
+						}
+
+						@Override
+						public void onError(String module, int errCode, String errMsg)
+						{
+							Log.i("ILVB","QUIT ERROR");
+							Log.i("ILVB",module);
+							Log.i("ILVB",new Integer(errCode).toString());
+							Log.i("ILVB",errMsg);
+
+							JSONObject obj = new JSONObject();
+							try
+							{
+								obj.put("module", module);
+								obj.put("errCode", errCode);
+								obj.put("errMsg", errMsg);
+							} catch (JSONException e) {
+								e.printStackTrace();
+								callbackContext.error("ERROR: " + errMsg);
+							}
+							
+							callbackContext.error(obj);
+						}
+					});
 				}
 			});
 
@@ -452,6 +464,13 @@ public class TencentILVB extends CordovaPlugin implements ILiveMemStatusLisenter
         }
 
         return false;
+    }
+
+	@Override
+    public void onDestroy() {
+        ILVLiveManager.getInstance().shutdown();
+
+        super.onDestroy();
     }
 
 	public void triggerJSEvent(String type, JSONObject data )
