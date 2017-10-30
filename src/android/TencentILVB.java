@@ -421,44 +421,7 @@ public class TencentILVB extends CordovaPlugin implements ILiveMemStatusLisenter
 		}
 		else if (action.equals("quit"))
 		{
-			this.cordova.getActivity().runOnUiThread(new Runnable()
-			{
-				@Override
-				public void run()
-				{
-					ILVLiveManager.getInstance().quitRoom(new ILiveCallBack()
-					{
-						@Override
-						public void onSuccess(Object data)
-						{
-							Gson gson = new Gson();
-							callbackContext.success(gson.toJson(data));
-						}
-
-						@Override
-						public void onError(String module, int errCode, String errMsg)
-						{
-							Log.i("ILVB","QUIT ERROR");
-							Log.i("ILVB",module);
-							Log.i("ILVB",new Integer(errCode).toString());
-							Log.i("ILVB",errMsg);
-
-							JSONObject obj = new JSONObject();
-							try
-							{
-								obj.put("module", module);
-								obj.put("errCode", errCode);
-								obj.put("errMsg", errMsg);
-							} catch (JSONException e) {
-								e.printStackTrace();
-								callbackContext.error("ERROR: " + errMsg);
-							}
-							
-							callbackContext.error(obj);
-						}
-					});
-				}
-			});
+			doQuitRoom();
 
 			return true;
         }
@@ -467,11 +430,40 @@ public class TencentILVB extends CordovaPlugin implements ILiveMemStatusLisenter
     }
 
 	@Override
-    public void onDestroy() {
+    public void onDestroy()
+	{
+		doQuitRoom();
         ILVLiveManager.getInstance().shutdown();
-
         super.onDestroy();
     }
+
+	public void doQuitRoom()
+	{
+		this.cordova.getActivity().runOnUiThread(new Runnable()
+		{
+			@Override
+			public void run()
+			{
+				ILVLiveManager.getInstance().quitRoom(new ILiveCallBack()
+				{
+					@Override
+					public void onSuccess(Object data)
+					{
+
+					}
+
+					@Override
+					public void onError(String module, int errCode, String errMsg)
+					{
+						Log.i("ILVB","QUIT ERROR");
+						Log.i("ILVB",module);
+						Log.i("ILVB",new Integer(errCode).toString());
+						Log.i("ILVB",errMsg);
+					}
+				});
+			}
+		});
+	}
 
 	public void triggerJSEvent(String type, JSONObject data )
 	{
