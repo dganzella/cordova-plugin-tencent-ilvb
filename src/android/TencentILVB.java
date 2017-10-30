@@ -281,6 +281,7 @@ public class TencentILVB extends CordovaPlugin implements ILiveMemStatusLisenter
 								.videoRecvMode(AVRoomMulti.VIDEO_RECV_MODE_SEMI_AUTO_RECV_CAMERA_VIDEO)
 								.autoMic(true)
 								.autoCamera(true)
+								.imsupport(false)
 								.setRoomMemberStatusLisenter(selfRef);
 						
 						Log.i("ILVB","CREATE ROOM NOW");
@@ -331,6 +332,7 @@ public class TencentILVB extends CordovaPlugin implements ILiveMemStatusLisenter
 								.videoRecvMode(AVRoomMulti.VIDEO_RECV_MODE_SEMI_AUTO_RECV_CAMERA_VIDEO)
 								.autoMic(true)
 								.autoCamera(true)
+								.imsupport(false)
 								.setRoomMemberStatusLisenter(selfRef);
 								
 						Log.i("ILVB","JOIN ROOM NOW");
@@ -419,6 +421,33 @@ public class TencentILVB extends CordovaPlugin implements ILiveMemStatusLisenter
 		}
 		else if (action.equals("quit"))
 		{
+			ILVLiveManager.getInstance().quitRoom(new ILiveCallBack()
+			{
+				@Override
+				public void onSuccess(Object data)
+				{
+					Gson gson = new Gson();
+					callbackContext.success(gson.toJson(data));
+				}
+
+				@Override
+				public void onError(String module, int errCode, String errMsg)
+				{
+					JSONObject obj = new JSONObject();
+					try
+					{
+						obj.put("module", module);
+						obj.put("errCode", errCode);
+						obj.put("errMsg", errMsg);
+					} catch (JSONException e) {
+						e.printStackTrace();
+						callbackContext.error("ERROR: " + errMsg);
+					}
+					
+					callbackContext.error(obj);
+				}
+			});
+
 			return true;
         }
 

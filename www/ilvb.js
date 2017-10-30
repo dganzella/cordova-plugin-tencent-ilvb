@@ -46,5 +46,14 @@ module.exports = {
                 "updateView",
                 [openIdList[i], rect.top, rect.left, rect.width, rect.height, window.devicePixelRatio]);
         }
+	},
+	quit: function () {
+
+		cordova.exec(
+			function(data){console.log("Quited Successfully." + data)},
+			function(error){console.log("Error in quiting." + error)},
+			"TencentILVB",
+			"quit",
+			[]);
 	}
 };
