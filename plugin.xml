@@ -70,8 +70,18 @@
 	<framework src="src/ios/frameworks/IMSDK/TLSSDK.framework" custom="true" />
 	
 	<framework src="OpenAL.framework" />
+	<framework src="libbz2.tbd" />
+	<framework src="libresolv.tbd" />
+	<framework src="libiconv.tbd" />
+	<framework src="libstdc++.6.tbd" />
+	<framework src="libsqlite3.0.tbd" />
+	<framework src="libprotobuf.tbd" />
+	<framework src="libc++tbd" />
+	<framework src="libz.tbd" />
 	
 	<resource-file src="src/ios/bundles/TILFilterResource.bundle"/>
+	
+	  
   </platform>
 
 
