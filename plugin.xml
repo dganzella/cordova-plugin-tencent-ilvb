@@ -57,17 +57,17 @@
     <header-file src="src/ios/TencentILVB.h"/>
     <source-file src="src/ios/TencentILVB.m"/>
 	
-	<framework src="src/ios/framework/AVSDK/QAVSDK.framework" custom="true" />
+	<framework src="src/ios/frameworks/AVSDK/QAVSDK.framework" custom="true" />
 	
-	<framework src="src/ios/framework/ILiveSDK/ILiveSDK.framework" custom="true" />
-	<framework src="src/ios/framework/ILiveSDK/TILFilterSDK.framework" custom="true" />
-	<framework src="src/ios/framework/ILiveSDK/TILLiveSDK.framework" custom="true" />
+	<framework src="src/ios/frameworks/ILiveSDK/ILiveSDK.framework" custom="true" />
+	<framework src="src/ios/frameworks/ILiveSDK/TILFilterSDK.framework" custom="true" />
+	<framework src="src/ios/frameworks/ILiveSDK/TILLiveSDK.framework" custom="true" />
 	
-	<framework src="src/ios/framework/IMSDK/IMCore.framework" custom="true" />
-	<framework src="src/ios/framework/IMSDK/ImSDK.framework" custom="true" />
-	<framework src="src/ios/framework/IMSDK/IMSDKBugly.framework" custom="true" />
-	<framework src="src/ios/framework/IMSDK/QALSDK.framework" custom="true" />
-	<framework src="src/ios/framework/IMSDK/TLSSDK.framework" custom="true" />
+	<framework src="src/ios/frameworks/IMSDK/IMCore.framework" custom="true" />
+	<framework src="src/ios/frameworks/IMSDK/ImSDK.framework" custom="true" />
+	<framework src="src/ios/frameworks/IMSDK/IMSDKBugly.framework" custom="true" />
+	<framework src="src/ios/frameworks/IMSDK/QALSDK.framework" custom="true" />
+	<framework src="src/ios/frameworks/IMSDK/TLSSDK.framework" custom="true" />
 	
 	<resource-file src="src/ios/bundles/TILFilterResource.bundle"/>
   </platform>
