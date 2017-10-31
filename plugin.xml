@@ -69,6 +69,8 @@
 	<framework src="src/ios/frameworks/IMSDK/QALSDK.framework" custom="true" />
 	<framework src="src/ios/frameworks/IMSDK/TLSSDK.framework" custom="true" />
 	
+	<framework src="OpenAL.framework" />
+	
 	<resource-file src="src/ios/bundles/TILFilterResource.bundle"/>
   </platform>
 
