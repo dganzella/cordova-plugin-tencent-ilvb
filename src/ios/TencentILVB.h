@@ -10,12 +10,13 @@
 #import <ILiveSDK/ILiveSpeedTestManager.h>
 #import <TILLiveSDK/TILLiveSDK.h>
 
-@interface TencentILVB : CDVPlugin
+@interface TencentILVB : CDVPlugin <ILiveMemStatusListener>
 
+- (void)addEvent:(CDVInvokedUrlCommand*)command;
 - (void)init:(CDVInvokedUrlCommand*)command;
 - (void)createRoom:(CDVInvokedUrlCommand*)command;
-- (void)updateViews:(CDVInvokedUrlCommand*)command;
+- (void)updateView:(CDVInvokedUrlCommand*)command;
 - (void)quit:(CDVInvokedUrlCommand*)command;
 
-@end
 
+@end
