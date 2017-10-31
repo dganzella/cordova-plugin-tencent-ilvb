@@ -1,6 +1,6 @@
 #import "HWPHello.h"
 
-@implementation HWPHello
+@implementation TencentILVB
 
 - (void)greet:(CDVInvokedUrlCommand*)command
 {

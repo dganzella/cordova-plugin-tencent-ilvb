@@ -52,20 +52,12 @@
 
   </platform>
 
-  <!--<platform name="ios">-->
-    <!---->
-    <!--<config-file target="config.xml" parent="/widget">-->
-      <!--<feature name="Hello">-->
-        <!--<param name="ios-package" value="HWPHello" />-->
-      <!--</feature>-->
-    <!--</config-file>-->
+  <platform name="ios">-->
 
-    <!--<header-file src="src/ios/HWPHello.h" target-dir="HelloPlugin"/>-->
-    <!--<source-file src="src/ios/HWPHello.m" target-dir="HelloPlugin"/>-->
-  <!--</platform>-->
+    <header-file src="src/ios/TencentILVB.h"/>
+    <source-file src="src/ios/TencentILVB.m"/>
+  </platform>
 
-  <!--<platform name="wp7">-->
-    <!--<source-file src="src/wp7/Hello.cs"/>-->
-  <!--</platform>-->
+
 
 </plugin>
