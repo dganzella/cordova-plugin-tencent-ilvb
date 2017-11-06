@@ -205,11 +205,20 @@
     NSLog(@"HEIGHT: %d", height);
     NSLog(@"RATIO: %f", ratio);
     
-    ILiveRenderView * renderView = [[TILLiveManager getInstance] addAVRenderView: CGRectMake((int)(left), (int)(top), (int)(width), (int)(height)) forIdentifier:openid srcType: QAVVIDEO_SRC_TYPE_CAMERA];
+    ILiveRenderView *temp = [[TILLiveManager getInstance] getAVRenderView:openid srcType:QAVVIDEO_SRC_TYPE_CAMERA];
     
-    [self.webView.superview insertSubview:renderView atIndex:0];
-    self.webView.layer.zPosition = 999;
-    renderView.layer.zPosition = 1;
+    if(temp)
+    {
+        [temp setFrame:CGRectMake(left, top, width, height)];
+    }
+    else
+    {
+        ILiveRenderView * renderView = [[TILLiveManager getInstance] addAVRenderView: CGRectMake((int)(left), (int)(top), (int)(width), (int)(height)) forIdentifier:openid srcType: QAVVIDEO_SRC_TYPE_CAMERA];
+        
+        [self.webView.superview insertSubview:renderView atIndex:0];
+        self.webView.layer.zPosition = 999;
+        renderView.layer.zPosition = 1;
+    }
 }
 
 - (void)quit:(CDVInvokedUrlCommand*)command
