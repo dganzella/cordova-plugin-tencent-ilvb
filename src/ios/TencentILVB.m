@@ -66,6 +66,8 @@
             {
                 NSLog(@"REMOTE STREAM REMOVE");
                 [self triggerJSEvent: @"onRemoteStreamRemove" withData: eventData];
+                
+                [[TILLiveManager getInstance] removeAVRenderView: openid srcType: QAVVIDEO_SRC_TYPE_CAMERA];
             }
         }
     }
@@ -240,6 +242,8 @@
 - (void)quit:(CDVInvokedUrlCommand*)command
 {
     NSLog(@"QUIT");
+    
+    [[TILLiveManager getInstance] removeAllAVRenderViews];
     
     TILLiveManager *manager = [TILLiveManager getInstance];
     
