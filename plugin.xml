@@ -81,7 +81,12 @@
 	
 	<resource-file src="src/ios/bundles/TILFilterResource.bundle"/>
 	
-	  
+	 <config-file target="config.xml" parent="/*/plugins">
+		 <feature name="TencentILVB">
+			 <param name="ios-package" value="TencentILVB"/>
+		 </feature>
+	 </config-file>
+
   </platform>
 
 
