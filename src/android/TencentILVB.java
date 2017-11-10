@@ -55,6 +55,52 @@ public class TencentILVB extends CordovaPlugin implements ILiveMemStatusLisenter
 	public CallbackContext eventCallbackContext;
 	public TencentILVB selfRef;
 
+	class UpdateViewRunnable implements Runnable
+	{
+		String openid;
+
+		UpdateViewRunnable(String openid)
+		{ 
+			this.openid = openid;
+		}
+
+		public void run()
+		{
+			for (int i = 0; i < ILiveConstants.MAX_AV_VIDEO_NUM; i++)
+			{
+				AVVideoView avVideoView = avRootView.getViewByIndex(i);
+				String openid = avVideoView.getIdentifier();
+
+				if(openid != null)
+				{
+					Log.i("ILVB","FOUND VIEW WITH ID");
+					Log.i("ILVB",openid);
+				}
+			}
+
+			AVVideoView videoview = avRootView.getUserAvVideoView(openid, AVView.VIDEO_SRC_TYPE_CAMERA);
+
+			if(videoview != null)
+			{
+				Log.i("ILVB","FOUND CORRECT VIEW TO UPDATE");
+
+				if(viewPositions.containsKey(this.openid))
+				{
+					Rect r = viewPositions.get(this.openid);
+
+					videoview.setPosTop(r.top);
+					videoview.setPosLeft(r.left);
+					videoview.setPosWidth(r.width());
+					videoview.setPosHeight(r.height());
+					videoview.setBackgroundColor(0xFFFFFFFF);
+					videoview.autoLayout();
+				}
+
+				Log.i("ILVB","FINISHED UPDATE");
+			}
+		}
+	}
+	
     @Override
     public void initialize(CordovaInterface cordova, CordovaWebView webView)
 	{
@@ -104,6 +150,12 @@ public class TencentILVB extends CordovaPlugin implements ILiveMemStatusLisenter
 
 					if(!id.equals(ILiveLoginManager.getInstance().getMyUserId()))
 					{
+						Rect r = new Rect(99000,99000,99999,99999);
+
+						viewPositions.put(id, r);
+			
+						doUpdateView(id);
+								
 						triggerJSEvent("onRemoteStreamRemove", eventData);
 					}
 					
@@ -489,52 +541,6 @@ public class TencentILVB extends CordovaPlugin implements ILiveMemStatusLisenter
 
 	public void doUpdateView(String openid)
 	{
-		class UpdateViewRunnable implements Runnable
-		{
-			String openid;
-
-			UpdateViewRunnable(String openid)
-			{ 
-				this.openid = openid;
-			}
-
-			public void run()
-			{
-				for (int i = 0; i < ILiveConstants.MAX_AV_VIDEO_NUM; i++)
-				{
-					AVVideoView avVideoView = avRootView.getViewByIndex(i);
-					String openid = avVideoView.getIdentifier();
-
-					if(openid != null)
-					{
-						Log.i("ILVB","FOUND VIEW WITH ID");
-						Log.i("ILVB",openid);
-					}
-				}
-
-				AVVideoView videoview = avRootView.getUserAvVideoView(openid, AVView.VIDEO_SRC_TYPE_CAMERA);
-
-				if(videoview != null)
-				{
-					Log.i("ILVB","FOUND CORRECT VIEW TO UPDATE");
-
-					if(viewPositions.containsKey(this.openid))
-					{
-						Rect r = viewPositions.get(this.openid);
-
-						videoview.setPosTop(r.top);
-						videoview.setPosLeft(r.left);
-						videoview.setPosWidth(r.width());
-						videoview.setPosHeight(r.height());
-						videoview.setBackgroundColor(0xFFFFFFFF);
-						videoview.autoLayout();
-					}
-
-					Log.i("ILVB","FINISHED UPDATE");
-				}
-			}
-		}
-
 		cordova.getActivity().runOnUiThread(new UpdateViewRunnable(openid));
 	}
 }
