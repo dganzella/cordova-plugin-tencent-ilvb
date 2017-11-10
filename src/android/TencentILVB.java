@@ -44,7 +44,7 @@ import java.lang.reflect.*;
 
 public class TencentILVB extends CordovaPlugin implements ILiveMemStatusLisenter
 {
-	AVRootView avRootView;
+	AVRootView avRootView = null;
 
     private Context context;
     private Activity activity;
@@ -155,7 +155,9 @@ public class TencentILVB extends CordovaPlugin implements ILiveMemStatusLisenter
 						viewPositions.put(id, r);
 			
 						doUpdateView(id);
-								
+						
+						//avRootView.closeUserView(id, AVView.VIDEO_SRC_TYPE_CAMERA, true);
+						//viewPositions.remove(id);
 						triggerJSEvent("onRemoteStreamRemove", eventData);
 					}
 					
@@ -172,6 +174,8 @@ public class TencentILVB extends CordovaPlugin implements ILiveMemStatusLisenter
 	{
 		if (action.equals("init"))
 		{
+			viewPositions.clear();
+
             int appid = data.getInt(0);
 			Log.i("ILVB","APP ID:");
 			Log.i("ILVB",new Integer(appid).toString());
@@ -190,60 +194,66 @@ public class TencentILVB extends CordovaPlugin implements ILiveMemStatusLisenter
 				@Override
 				public void run()
 				{
-					ViewGroup parent = (ViewGroup) cordova.getActivity().findViewById(android.R.id.content);
+					if(avRootView == null)
+					{
+						ViewGroup parent = (ViewGroup) cordova.getActivity().findViewById(android.R.id.content);
+								
+						LayoutInflater inflater = (LayoutInflater)context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
 						
-					LayoutInflater inflater = (LayoutInflater)context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-					
-					View ilvbFrameView = inflater.inflate(context.getResources().
-						getIdentifier("ilvbview", "layout", activity.getPackageName()), null);
+						View ilvbFrameView = inflater.inflate(context.getResources().
+							getIdentifier("ilvbview", "layout", activity.getPackageName()), null);
 
-					Log.i("ILVB","FRAME OF ROOT VIEW");
-					Log.i("ILVB",ilvbFrameView.toString());
+						Log.i("ILVB","FRAME OF ROOT VIEW");
+						Log.i("ILVB",ilvbFrameView.toString());
 
-					parent.addView(ilvbFrameView, 0);
+						parent.addView(ilvbFrameView, 0);
 
-					ilvbFrameView.setBackgroundColor(0xFFFFFFFF);
-					
-					avRootView = (AVRootView) ilvbFrameView.findViewById(
-						context.getResources().
-						getIdentifier("av_root_view", "id", activity.getPackageName())
-					);
+						ilvbFrameView.setBackgroundColor(0xFFFFFFFF);
+						
+						avRootView = (AVRootView) ilvbFrameView.findViewById(
+							context.getResources().
+							getIdentifier("av_root_view", "id", activity.getPackageName())
+						);
+
+						avRootView.getVideoGroup().setBackgroundColor(0xFFFFFFFF);
+
+						avRootView.setSubCreatedListener(new AVRootView.onSubViewCreatedListener()
+						{
+							@Override
+							public void onSubViewCreated()
+							{
+								Log.i("ILVB","ON SUBVIEW CREATED");
+
+								for (int i = 0; i < ILiveConstants.MAX_AV_VIDEO_NUM; i++)
+								{
+									AVVideoView avVideoView = avRootView.getViewByIndex(i);
+
+									if( avVideoView.getIdentifier() == null)
+									{
+										avVideoView.setPosTop(99999);
+										avVideoView.setPosLeft(99999);
+										avVideoView.autoLayout();
+									}
+
+									avVideoView.setRecvFirstFrameListener(new AVVideoView.RecvFirstFrameListener()
+									{
+										@Override
+										public void onFirstFrameRecved(int width, int height, int angle, String identifier)
+										{
+											Log.i("ILVB","FIRST FRAME LISTENER");
+											doUpdateView(identifier);
+										}
+									});
+								}
+							}
+						});
+					}
 
 					Log.i("ILVB","ROOT VIEW");
 					Log.i("ILVB",avRootView.toString());
 
 					ILVLiveManager.getInstance().init(new ILVLiveConfig());
-
         			ILVLiveManager.getInstance().setAvVideoView(avRootView);
-					avRootView.getVideoGroup().setBackgroundColor(0xFFFFFFFF);
-
-					avRootView.setSubCreatedListener(new AVRootView.onSubViewCreatedListener()
-					{
-						@Override
-						public void onSubViewCreated()
-						{
-							for (int i = 0; i < ILiveConstants.MAX_AV_VIDEO_NUM; i++)
-							{
-								AVVideoView avVideoView = avRootView.getViewByIndex(i);
-
-								if( avVideoView.getIdentifier() == null)
-								{
-									avVideoView.setPosTop(99999);
-									avVideoView.setPosLeft(99999);
-								}
-
-								avVideoView.setRecvFirstFrameListener(new AVVideoView.RecvFirstFrameListener()
-								{
-									@Override
-									public void onFirstFrameRecved(int width, int height, int angle, String identifier)
-									{
-										Log.i("ILVB","FIRST FRAME LISTENER");
-										doUpdateView(identifier);
-									}
-								});
-							}
-						}
-					});
 				}
 			});
 	
@@ -496,13 +506,22 @@ public class TencentILVB extends CordovaPlugin implements ILiveMemStatusLisenter
 			@Override
 			public void run()
 			{
+
+				//for (String userId : viewPositions.keySet())
+				//{
+				//	avRootView.closeUserView(userId, AVView.VIDEO_SRC_TYPE_CAMERA, true);
+				//}
+
 				for (int i = 0; i < ILiveConstants.MAX_AV_VIDEO_NUM; i++)
 				{
 					AVVideoView avVideoView = avRootView.getViewByIndex(i);
 
 					avVideoView.setPosTop(99999);
 					avVideoView.setPosLeft(99999);
+					avVideoView.autoLayout();
 				}
+
+				viewPositions.clear();
 				
 				ILVLiveManager.getInstance().quitRoom(new ILiveCallBack()
 				{
