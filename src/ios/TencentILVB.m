@@ -9,7 +9,7 @@
 -(void) pluginInitialize
 {
     NSLog(@"ILVB initialized");
-
+    
     videosview = [[UIView alloc] initWithFrame:CGRectMake(0, 0, [[UIScreen mainScreen] bounds].size.width, [[UIScreen mainScreen] bounds].size.height)];
     [videosview setBackgroundColor:[UIColor clearColor]];
 }
@@ -33,7 +33,7 @@
 
 - (void)onFirstFrameRecved:(int)width height:(int)height identifier:(NSString *)identifier srcType:(avVideoSrcType)srcType
 {
-
+    
 }
 
 - (void)onUserUpdateInfo:(ILVLiveAVEvent)event users:(NSArray *)users
@@ -91,7 +91,7 @@
     [[ILiveLoginManager getInstance] iLiveLogin:openid sig:usersig succ:^{
         
         NSLog(@"Logged in successfully");
-
+        
         [[TILLiveManager getInstance]  setAVRootView:videosview];
         [[TILLiveManager getInstance]  setAVListener:self];
         
@@ -139,47 +139,61 @@
         option.avOption.avSupport = true;
         option.avOption.autoCamera = true;
         option.avOption.autoMic = true;
+        option.avOption.autoSpeaker = true;
         
         [[TILLiveManager getInstance] createRoom:roomId option:option succ:^
-        {
-            NSLog(@"createRoom succ");
-            
-            CDVPluginResult* result = [CDVPluginResult
-                                       resultWithStatus:CDVCommandStatus_OK
-                                       messageAsInt:0];
-            
-            [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
-            
-        } failed:^(NSString *module, int errId, NSString *errMsg) {
-            
-            NSString *errinfo = [NSString stringWithFormat:@"module=%@,errid=%d,errmsg=%@",module,errId,errMsg];
-            NSLog(@"createRoom fail.%@",errinfo);
-            
-            CDVPluginResult* result = [CDVPluginResult
-                                       resultWithStatus:CDVCommandStatus_ERROR
-                                       messageAsInt:errId];
-            
-            [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
-        }];
+         {
+             NSLog(@"createRoom succ");
+             
+             CDVPluginResult* result = [CDVPluginResult
+                                        resultWithStatus:CDVCommandStatus_OK
+                                        messageAsInt:0];
+             
+             [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
+             
+         } failed:^(NSString *module, int errId, NSString *errMsg) {
+             
+             NSString *errinfo = [NSString stringWithFormat:@"module=%@,errid=%d,errmsg=%@",module,errId,errMsg];
+             NSLog(@"createRoom fail.%@",errinfo);
+             
+             CDVPluginResult* result = [CDVPluginResult
+                                        resultWithStatus:CDVCommandStatus_ERROR
+                                        messageAsInt:errId];
+             
+             [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
+         }];
     }
     else
     {
         NSLog(@"IS VIEWER, WILL JOIN ROOM");
         
-        TILLiveRoomOption *option = [TILLiveRoomOption defaultGuestLiveOption];
+        TILLiveRoomOption *option = [TILLiveRoomOption defaultInteractUserLiveOption];
         option.controlRole = role;
         option.imOption.imSupport = NO;
         option.avOption.avSupport = true;
         option.avOption.autoCamera = true;
         option.avOption.autoMic = true;
-
+        option.avOption.autoSpeaker = true;
+        
         [[TILLiveManager getInstance] joinRoom:roomId option:option succ:^
          {
-             NSLog(@"joinRoom succ");
+             NSLog(@"JOIN ROOM SUCCESS");
+             
+             CDVPluginResult* result = [CDVPluginResult
+                                        resultWithStatus:CDVCommandStatus_OK
+                                        messageAsInt:0];
+             
+             [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
+             
          } failed:^(NSString *module, int errId, NSString *errMsg) {
              
-             NSString *errinfo = [NSString stringWithFormat:@"module=%@,errid=%d,errmsg=%@",module,errId,errMsg];
-             NSLog(@"joinRoom fail.%@",errinfo);
+             NSLog(@"JOIN ROOM FAIL");
+             
+             CDVPluginResult* result = [CDVPluginResult
+                                        resultWithStatus:CDVCommandStatus_ERROR
+                                        messageAsInt:errId];
+             
+             [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
          }];
     }
 }
@@ -218,6 +232,8 @@
         [self.webView.superview insertSubview:renderView atIndex:0];
         self.webView.layer.zPosition = 999;
         renderView.layer.zPosition = 1;
+        renderView.isRotate = NO;
+        renderView.autoRotate = NO;
     }
 }
 
@@ -226,7 +242,7 @@
     NSLog(@"QUIT");
     
     TILLiveManager *manager = [TILLiveManager getInstance];
-
+    
     [manager quitRoom:^{
         NSLog(@"quit Room succ");
     } failed:^(NSString *module, int errId, NSString *errMsg) {
