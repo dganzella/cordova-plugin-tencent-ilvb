@@ -4,11 +4,15 @@
 {
     UIView * videosview;
     NSString * callbackId;
+    bool ILVBinitialized, quitting;
 }
 
 -(void) pluginInitialize
 {
     NSLog(@"ILVB initialized");
+    
+    self->ILVBinitialized = false;
+    self->quitting = false;
     
     videosview = [[UIView alloc] initWithFrame:CGRectMake(0, 0, [[UIScreen mainScreen] bounds].size.width, [[UIScreen mainScreen] bounds].size.height)];
     [videosview setBackgroundColor:[UIColor clearColor]];
@@ -81,7 +85,12 @@
     NSString* accounttype = [[command arguments] objectAtIndex:1];
     NSLog(@"ACCOUNT TYPE: %@", accounttype);
     
-    [[ILiveSDK getInstance] initSdk:[sdkppid intValue] accountType:[accounttype intValue]];
+    
+    if(!self->ILVBinitialized){
+        [[ILiveSDK getInstance] initSdk:[sdkppid intValue] accountType:[accounttype intValue]];
+        self->ILVBinitialized = true;
+    }
+    
     [[ILiveSDK getInstance] setConsoleLogPrint:YES];
     
     NSString* openid = [[command arguments] objectAtIndex:2];
@@ -103,8 +112,10 @@
         
         [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
         
-    } failed:^(NSString *moudle, int errId, NSString *errMsg) {
+    } failed:^(NSString *module, int errId, NSString *errMsg) {
         NSLog(@"Login failed");
+        
+        NSLog(@"login fail.module=%@,errid=%d,errmsg=%@",module,errId,errMsg);
         
         CDVPluginResult* result = [CDVPluginResult
                                    resultWithStatus:CDVCommandStatus_ERROR
@@ -226,6 +237,8 @@
     if(temp)
     {
         [temp setFrame:CGRectMake(left, top, width, height)];
+        temp.rotateAngle = ILIVEROTATION_0;
+        temp.autoRotate = NO;
     }
     else
     {
@@ -234,7 +247,7 @@
         [self.webView.superview insertSubview:renderView atIndex:0];
         self.webView.layer.zPosition = 999;
         renderView.layer.zPosition = 1;
-        renderView.isRotate = NO;
+        renderView.rotateAngle = ILIVEROTATION_0;
         renderView.autoRotate = NO;
     }
 }
@@ -243,15 +256,29 @@
 {
     NSLog(@"QUIT");
     
-    [[TILLiveManager getInstance] removeAllAVRenderViews];
-    
-    TILLiveManager *manager = [TILLiveManager getInstance];
-    
-    [manager quitRoom:^{
-        NSLog(@"quit Room succ");
-    } failed:^(NSString *module, int errId, NSString *errMsg) {
-        NSLog(@"exit room fail.module=%@,errid=%d,errmsg=%@",module,errId,errMsg);
-    }];
+    if(!quitting)
+    {
+        self->quitting = true;
+        
+        [[TILLiveManager getInstance] removeAllAVRenderViews];
+        
+        TILLiveManager *manager = [TILLiveManager getInstance];
+        
+        [manager quitRoom:^{
+            NSLog(@"quit Room succ");
+            [[ILiveLoginManager getInstance] iLiveLogout:^{
+                NSLog(@"logout succ");
+                self->quitting = false;
+            } failed:^(NSString *module, int errId, NSString *errMsg) {
+                NSLog(@"logout room fail.module=%@,errid=%d,errmsg=%@",module,errId,errMsg);
+                self->quitting = false;
+            }];
+            
+        } failed:^(NSString *module, int errId, NSString *errMsg) {
+            NSLog(@"exit room fail.module=%@,errid=%d,errmsg=%@",module,errId,errMsg);
+            self->quitting = false;
+        }];
+    }
 }
 
 
