@@ -55,6 +55,8 @@ public class TencentILVB extends CordovaPlugin implements ILiveMemStatusLisenter
 	public CallbackContext eventCallbackContext;
 	public TencentILVB selfRef;
 
+	private boolean quitting = false, inited = false;
+
 	class UpdateViewRunnable implements Runnable
 	{
 		String openid;
@@ -174,8 +176,6 @@ public class TencentILVB extends CordovaPlugin implements ILiveMemStatusLisenter
 	{
 		if (action.equals("init"))
 		{
-			viewPositions.clear();
-
             int appid = data.getInt(0);
 			Log.i("ILVB","APP ID:");
 			Log.i("ILVB",new Integer(appid).toString());
@@ -185,9 +185,11 @@ public class TencentILVB extends CordovaPlugin implements ILiveMemStatusLisenter
 			Log.i("ILVB","ACC TYPE:");
 			Log.i("ILVB",new Integer(accountType).toString()) ;
 
-            ILiveSDK.getInstance().initSdk(this.context, appid, accountType);
-
-			Log.i("ILVB","FINISH INIT");
+			if(!inited)
+			{
+				ILiveSDK.getInstance().initSdk(this.context, appid, accountType);
+				inited = true;
+			}
 
 			this.cordova.getActivity().runOnUiThread(new Runnable()
 			{
@@ -247,15 +249,18 @@ public class TencentILVB extends CordovaPlugin implements ILiveMemStatusLisenter
 								}
 							}
 						});
+
+						
+						Log.i("ILVB","ROOT VIEW");
+						Log.i("ILVB",avRootView.toString());
+
+						ILVLiveManager.getInstance().init(new ILVLiveConfig());
+						ILVLiveManager.getInstance().setAvVideoView(avRootView);
 					}
-
-					Log.i("ILVB","ROOT VIEW");
-					Log.i("ILVB",avRootView.toString());
-
-					ILVLiveManager.getInstance().init(new ILVLiveConfig());
-        			ILVLiveManager.getInstance().setAvVideoView(avRootView);
 				}
 			});
+
+			Log.i("ILVB","FINISH INIT");
 	
             String id = data.getString(2);
             String sig = data.getString(3);
@@ -492,15 +497,32 @@ public class TencentILVB extends CordovaPlugin implements ILiveMemStatusLisenter
     }
 
 	@Override
+    public void onPause(boolean multitasking) {
+        super.onPause(multitasking);
+		doQuitRoom();
+    }
+
+    @Override
+    public void onResume(boolean multitasking) {
+        super.onResume(multitasking);
+        ILVLiveManager.getInstance().onResume();
+    }
+
+	@Override
     public void onDestroy()
 	{
+		super.onDestroy();
 		doQuitRoom();
         ILVLiveManager.getInstance().shutdown();
-        super.onDestroy();
     }
 
 	public void doQuitRoom()
 	{
+		if(quitting)
+			return;
+
+		quitting = true;
+
 		this.cordova.getActivity().runOnUiThread(new Runnable()
 		{
 			@Override
@@ -522,13 +544,40 @@ public class TencentILVB extends CordovaPlugin implements ILiveMemStatusLisenter
 				}
 
 				viewPositions.clear();
-				
+
 				ILVLiveManager.getInstance().quitRoom(new ILiveCallBack()
 				{
 					@Override
 					public void onSuccess(Object data)
 					{
+						Log.i("ILVB","QUIT ROOM SUCCESS");
 
+						quitting = false;
+
+						/*
+						
+						Android is Crashing on logout.
+
+						ILiveLoginManager.getInstance().iLiveLogout(new ILiveCallBack()
+						{
+							@Override
+							public void onSuccess(Object data)
+							{
+								Log.i("ILVB","LOGOUT SUCCESS");
+								quitting = false;
+							}
+
+							@Override
+							public void onError(String module, int errCode, String errMsg)
+							{
+								Log.i("ILVB","LOGOUT ERROR");
+								Log.i("ILVB",module);
+								Log.i("ILVB",new Integer(errCode).toString());
+								Log.i("ILVB",errMsg);
+
+								quitting = false;
+							}
+						});*/
 					}
 
 					@Override
@@ -538,6 +587,8 @@ public class TencentILVB extends CordovaPlugin implements ILiveMemStatusLisenter
 						Log.i("ILVB",module);
 						Log.i("ILVB",new Integer(errCode).toString());
 						Log.i("ILVB",errMsg);
+
+						quitting = false;
 					}
 				});
 			}
