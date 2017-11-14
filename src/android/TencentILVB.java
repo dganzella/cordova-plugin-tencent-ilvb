@@ -348,6 +348,7 @@ public class TencentILVB extends CordovaPlugin implements ILiveMemStatusLisenter
 								.cameraId(ILiveConstants.FRONT_CAMERA)
 								.videoRecvMode(AVRoomMulti.VIDEO_RECV_MODE_SEMI_AUTO_RECV_CAMERA_VIDEO)
 								.autoMic(true)
+								.autoSpeaker(true)
 								.autoCamera(true)
 								.imsupport(false)
 								.setRoomMemberStatusLisenter(selfRef);
@@ -400,6 +401,7 @@ public class TencentILVB extends CordovaPlugin implements ILiveMemStatusLisenter
 								.videoRecvMode(AVRoomMulti.VIDEO_RECV_MODE_SEMI_AUTO_RECV_CAMERA_VIDEO)
 								.autoMic(true)
 								.autoCamera(true)
+								.autoSpeaker(true)
 								.imsupport(false)
 								.setRoomMemberStatusLisenter(selfRef);
 								
