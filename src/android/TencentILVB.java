@@ -187,6 +187,7 @@ public class TencentILVB extends CordovaPlugin implements ILiveMemStatusLisenter
 
 			if(!inited)
 			{
+				ILiveLog.setLogLevel(ILiveLog.TILVBLogLevel.OFF);
 				ILiveSDK.getInstance().initSdk(this.context, appid, accountType);
 				inited = true;
 			}

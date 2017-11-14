@@ -91,7 +91,7 @@
         self->ILVBinitialized = true;
     }
     
-    [[ILiveSDK getInstance] setConsoleLogPrint:YES];
+    [[ILiveSDK getInstance] setConsoleLogPrint:NO];
     
     NSString* openid = [[command arguments] objectAtIndex:2];
     NSLog(@"OPEN ID: %@", openid);
