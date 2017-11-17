@@ -95,6 +95,7 @@ public class TencentILVB extends CordovaPlugin implements ILiveMemStatusLisenter
 					videoview.setPosWidth(r.width());
 					videoview.setPosHeight(r.height());
 					videoview.setBackgroundColor(0xFFFFFFFF);
+					videoview.setRotate(false);
 					videoview.autoLayout();
 				}
 
@@ -230,6 +231,8 @@ public class TencentILVB extends CordovaPlugin implements ILiveMemStatusLisenter
 								for (int i = 0; i < ILiveConstants.MAX_AV_VIDEO_NUM; i++)
 								{
 									AVVideoView avVideoView = avRootView.getViewByIndex(i);
+
+									avVideoView.setRotate(false);
 
 									if( avVideoView.getIdentifier() == null)
 									{
