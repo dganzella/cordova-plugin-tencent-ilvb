@@ -29,7 +29,7 @@ module.exports = {
             function(){},
             "TencentILVB",
             'enableDisableOutput',
-            ['audio','on']);
+            ['mic','on']);
     },
 
     closeAudio: function(){
@@ -37,7 +37,7 @@ module.exports = {
             function(){},
             "TencentILVB",
             'enableDisableOutput',
-            ['audio','off']);
+            ['mic','off']);
     },
 	
     init: function (listenerList, config) {
