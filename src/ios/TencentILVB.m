@@ -211,6 +211,16 @@
     }
 }
 
+- (void)deviceRotated:(CDVInvokedUrlCommand*)command
+{
+    UIInterfaceOrientation orientation = [UIApplication sharedApplication].statusBarOrientation;
+    
+    NSLog(@"ORIENTATION: %ld", (long)orientation);
+    
+    NSLog(@"LEFT IS: %ld, RIGHT IS: %ld",(long)UIInterfaceOrientationLandscapeLeft, (long)UIInterfaceOrientationLandscapeRight);
+    
+    [self updateRotation:[ILiveLoginManager getInstance].getLoginId];
+}
 
 - (void)updateView:(CDVInvokedUrlCommand*)command
 {
@@ -232,23 +242,45 @@
     NSLog(@"HEIGHT: %d", height);
     NSLog(@"RATIO: %f", ratio);
     
-    ILiveRenderView *temp = [[TILLiveManager getInstance] getAVRenderView:openid srcType:QAVVIDEO_SRC_TYPE_CAMERA];
+    ILiveRenderView * renderview = [[TILLiveManager getInstance] getAVRenderView:openid srcType:QAVVIDEO_SRC_TYPE_CAMERA];
     
-    if(temp)
+    if(renderview)
     {
-        [temp setFrame:CGRectMake(left, top, width, height)];
-        temp.rotateAngle = ILIVEROTATION_0;
-        temp.autoRotate = NO;
+        [renderview setFrame:CGRectMake(left, top, width, height)];
+        renderview.rotateAngle = ILIVEROTATION_0;
+        renderview.autoRotate = NO;
     }
     else
     {
-        ILiveRenderView * renderView = [[TILLiveManager getInstance] addAVRenderView: CGRectMake((int)(left), (int)(top), (int)(width), (int)(height)) forIdentifier:openid srcType: QAVVIDEO_SRC_TYPE_CAMERA];
+        renderview = [[TILLiveManager getInstance] addAVRenderView: CGRectMake((int)(left), (int)(top), (int)(width), (int)(height)) forIdentifier:openid srcType: QAVVIDEO_SRC_TYPE_CAMERA];
         
-        [self.webView.superview insertSubview:renderView atIndex:0];
+        [self.webView.superview insertSubview:renderview atIndex:0];
         self.webView.layer.zPosition = 999;
-        renderView.layer.zPosition = 1;
-        renderView.rotateAngle = ILIVEROTATION_0;
-        renderView.autoRotate = NO;
+        renderview.layer.zPosition = 1;
+        
+        renderview.autoRotate = NO;
+    }
+    
+    [self updateRotation:openid];
+}
+
+- (void) updateRotation: (NSString*) openid
+{
+    ILiveRenderView * renderview = [[TILLiveManager getInstance] getAVRenderView:openid srcType:QAVVIDEO_SRC_TYPE_CAMERA];
+    
+    UIInterfaceOrientation orientation = [UIApplication sharedApplication].statusBarOrientation;
+    
+    if([openid isEqualToString: [ILiveLoginManager getInstance].getLoginId]){
+        
+        if(orientation == UIInterfaceOrientationLandscapeLeft){
+            renderview.rotateAngle = ILIVEROTATION_0;
+        }
+        else if(orientation == UIInterfaceOrientationLandscapeRight){
+            renderview.rotateAngle = ILIVEROTATION_180;
+        }
+    }
+    else{
+        renderview.rotateAngle = ILIVEROTATION_0;
     }
 }
 
@@ -283,3 +315,4 @@
 
 
 @end
+
