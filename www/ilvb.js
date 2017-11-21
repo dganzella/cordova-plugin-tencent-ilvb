@@ -8,6 +8,38 @@ module.exports = {
         window.WebRTCAPI.eventList[response.eventType](response.data);
     },
 	
+    openVideo: function(){
+		cordova.exec(window.WebRTCAPI.eventReceived,
+            function(){},
+            "TencentILVB",
+            'enableDisableOutput',
+            ['video','on']);
+    },
+
+    closeVideo: function(){
+        cordova.exec(window.WebRTCAPI.eventReceived,
+            function(){},
+            "TencentILVB",
+            'enableDisableOutput',
+            ['video','off']);
+    },
+
+    openAudio: function(){
+        cordova.exec(window.WebRTCAPI.eventReceived,
+            function(){},
+            "TencentILVB",
+            'enableDisableOutput',
+            ['audio','on']);
+    },
+
+    closeAudio: function(){
+        cordova.exec(window.WebRTCAPI.eventReceived,
+            function(){},
+            "TencentILVB",
+            'enableDisableOutput',
+            ['audio','off']);
+    },
+	
     init: function (listenerList, config) {
 		
 		window.WebRTCAPI.eventList = listenerList;
