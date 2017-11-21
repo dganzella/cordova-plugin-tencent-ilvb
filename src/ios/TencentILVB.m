@@ -223,6 +223,33 @@
     [self updateRotation:[ILiveLoginManager getInstance].getLoginId];
 }
 
+- (void)enableDisableOutput:(CDVInvokedUrlCommand*)command
+{
+    NSString*  output = [[command arguments] objectAtIndex:0];
+    
+    NSLog(@"OUTPUT: %@", output);
+    
+    NSString*  onOff = [[command arguments] objectAtIndex:1];
+    
+    NSLog(@"ON OFF: %@", onOff);
+    
+    if([output isEqualToString:@"mic"]){
+        
+        [[ILiveRoomManager getInstance] enableMic:[onOff isEqualToString:@"on"] succ:^{
+            NSLog(@"enable mic succ");
+        } failed:^(NSString *module, int errId, NSString *errMsg) {
+            NSLog(@"enable mic fail.module=%@,errid=%d,errmsg=%@",module,errId,errMsg);
+        }];
+    }
+    else if ([output isEqualToString:@"video"]){
+        [[ILiveRoomManager getInstance] enableCamera: CameraPosFront enable:[onOff isEqualToString:@"on"] succ:^{
+            NSLog(@"enable video succ");
+        } failed:^(NSString *module, int errId, NSString *errMsg) {
+            NSLog(@"enable camera fail.module=%@,errid=%d,errmsg=%@",module,errId,errMsg);
+        }];
+    }
+}
+
 - (void)updateView:(CDVInvokedUrlCommand*)command
 {
     NSLog(@"UPDATE VIEW");
@@ -318,3 +345,4 @@
 
 
 @end
+

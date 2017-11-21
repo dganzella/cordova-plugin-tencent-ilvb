@@ -16,6 +16,7 @@
 - (void)init:(CDVInvokedUrlCommand*)command;
 - (void)createOrJoinRoom:(CDVInvokedUrlCommand*)command;
 - (void)deviceRotated:(CDVInvokedUrlCommand*)command;
+- (void)enableDisableOutput:(CDVInvokedUrlCommand*)command;
 - (void)updateView:(CDVInvokedUrlCommand*)command;
 - (void)quit:(CDVInvokedUrlCommand*)command;
 
