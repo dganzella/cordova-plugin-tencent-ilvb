@@ -87,6 +87,7 @@
     
     
     if(!self->ILVBinitialized){
+        [[ILiveSDK getInstance] setLogLevel:ILive_LOG_NONE];
         [[ILiveSDK getInstance] initSdk:[sdkppid intValue] accountType:[accounttype intValue]];
         self->ILVBinitialized = true;
     }
@@ -274,9 +275,11 @@
         
         if(orientation == UIInterfaceOrientationLandscapeLeft){
             renderview.rotateAngle = ILIVEROTATION_0;
+            [[[ILiveSDK getInstance] getAVContext].videoCtrl setRotation:OrientationLandscapeRight]; //its inverted
         }
-        else if(orientation == UIInterfaceOrientationLandscapeRight){
+        else if(orientation != UIInterfaceOrientationLandscapeLeft){
             renderview.rotateAngle = ILIVEROTATION_180;
+            [[[ILiveSDK getInstance] getAVContext].videoCtrl setRotation:OrientationLandscapeLeft]; //its inverted
         }
     }
     else{
@@ -315,4 +318,3 @@
 
 
 @end
-
