@@ -1,6 +1,7 @@
+cordova.define("cordova-plugin-tencent-ilvb.TencentILVB", function(require, exports, module) {
 module.exports = {
 	
-	eventList: null,
+    eventList: null,
 	
     eventReceived: function (response)
 	{
@@ -24,6 +25,16 @@ module.exports = {
             "init",
             [config.sdkAppId, config.accountType, config.openid, config.userSig]
         );
+
+        window.addEventListener("orientationchange", function(){
+            cordova.exec(
+                function(data){console.log("Orientation update success.")},
+                function(error){console.log("Orientation update fail.")},
+                "TencentILVB",
+                "deviceRotated",
+                []
+            );    
+        });
     },
     createRoom: function (configs, resultCallback) {
         cordova.exec(
@@ -57,3 +68,5 @@ module.exports = {
 			[]);
 	}
 };
+
+});

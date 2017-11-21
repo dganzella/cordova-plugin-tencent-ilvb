@@ -11,6 +11,8 @@ import android.widget.Toast;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.LayoutInflater;
+import android.view.WindowManager;
+import android.view.Display;
 
 import org.apache.cordova.*;
 
@@ -42,6 +44,14 @@ import java.util.HashMap;
 import java.util.ArrayList;
 import java.lang.reflect.*;
 
+import android.content.res.Configuration;
+import android.os.Bundle;
+
+import android.hardware.SensorManager;
+import android.hardware.SensorEventListener;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+
 public class TencentILVB extends CordovaPlugin implements ILiveMemStatusLisenter
 {
 	AVRootView avRootView = null;
@@ -55,7 +65,7 @@ public class TencentILVB extends CordovaPlugin implements ILiveMemStatusLisenter
 	public CallbackContext eventCallbackContext;
 	public TencentILVB selfRef;
 
-	private boolean quitting = false, inited = false;
+	private boolean quitting = false, inited = false, insideRoom = false;
 
 	class UpdateViewRunnable implements Runnable
 	{
@@ -95,7 +105,17 @@ public class TencentILVB extends CordovaPlugin implements ILiveMemStatusLisenter
 					videoview.setPosWidth(r.width());
 					videoview.setPosHeight(r.height());
 					videoview.setBackgroundColor(0xFFFFFFFF);
-					videoview.setRotate(false);
+
+					Display display = ((WindowManager) context.getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay();
+					int rotation = display.getRotation();
+
+					if(this.openid.equals(ILiveLoginManager.getInstance().getMyUserId())){
+						videoview.setRotation(0);
+					}
+					else{
+						videoview.setRotation(rotation == 1 ? 270 : 90);
+					}
+					
 					videoview.autoLayout();
 				}
 
@@ -115,7 +135,7 @@ public class TencentILVB extends CordovaPlugin implements ILiveMemStatusLisenter
 		this.selfRef = this;
 		viewPositions = new HashMap<String, Rect>();
     }
-
+	
     @Override
     public boolean onEndpointsUpdateInfo(int eventid, String[] updateList)
 	{
@@ -221,6 +241,8 @@ public class TencentILVB extends CordovaPlugin implements ILiveMemStatusLisenter
 
 						avRootView.getVideoGroup().setBackgroundColor(0xFFFFFFFF);
 
+						avRootView.setAutoOrientation(false);
+
 						avRootView.setSubCreatedListener(new AVRootView.onSubViewCreatedListener()
 						{
 							@Override
@@ -232,7 +254,7 @@ public class TencentILVB extends CordovaPlugin implements ILiveMemStatusLisenter
 								{
 									AVVideoView avVideoView = avRootView.getViewByIndex(i);
 
-									avVideoView.setRotate(false);
+									//avVideoView.setRotate(false);
 
 									if( avVideoView.getIdentifier() == null)
 									{
@@ -248,6 +270,25 @@ public class TencentILVB extends CordovaPlugin implements ILiveMemStatusLisenter
 										{
 											Log.i("ILVB","FIRST FRAME LISTENER");
 											doUpdateView(identifier);
+
+											class DelayedUpdate implements Runnable
+											{
+												String openid;
+
+												DelayedUpdate(String openid)
+												{ 
+													this.openid = openid;
+												}
+
+												public void run() {
+													Log.i("ILVB","DELAYED RUN");
+													doUpdateView(this.openid);
+												}
+											};
+
+											new android.os.Handler().postDelayed(
+												new DelayedUpdate(identifier), 
+											500);
 										}
 									});
 								}
@@ -261,6 +302,10 @@ public class TencentILVB extends CordovaPlugin implements ILiveMemStatusLisenter
 						ILVLiveManager.getInstance().init(new ILVLiveConfig());
 						ILVLiveManager.getInstance().setAvVideoView(avRootView);
 					}
+
+					Display display = ((WindowManager) context.getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay();
+					int rotation = display.getRotation();
+					avRootView.setRemoteRotationFix(rotation == 1 ? 270 : 90);
 				}
 			});
 
@@ -364,6 +409,7 @@ public class TencentILVB extends CordovaPlugin implements ILiveMemStatusLisenter
 							@Override
 							public void onSuccess(Object data) {
 								Log.i("ILVB","CREATE ROOM SUCCESS");
+								insideRoom = true;
 
 								Gson gson = new Gson();
 								callbackContext.success(gson.toJson(data));
@@ -415,6 +461,7 @@ public class TencentILVB extends CordovaPlugin implements ILiveMemStatusLisenter
 							@Override
 							public void onSuccess(Object data) {
 								Log.i("ILVB","JOIN ROOM SUCCESS");
+								insideRoom = true;
 
 								Gson gson = new Gson();
 								callbackContext.success(gson.toJson(data));
@@ -456,6 +503,28 @@ public class TencentILVB extends CordovaPlugin implements ILiveMemStatusLisenter
 			
 			return true;
       	}
+		else if(action.equals("deviceRotated")){
+
+			if(avRootView != null)
+			{
+				this.cordova.getActivity().runOnUiThread(new Runnable()
+				{
+					@Override
+					public void run()
+					{
+						Display display = ((WindowManager) context.getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay();
+						int rotation = display.getRotation();
+						Log.i("ILVB","ROT ON UPDATE: " + new Integer(rotation).toString());
+						avRootView.setRemoteRotationFix(rotation == 1 ? 270 : 90);
+					}
+				});
+
+				for (String userId : viewPositions.keySet())
+				{
+					doUpdateView(userId);
+				}
+			}
+		}
 		else if(action.equals("updateView"))
 		{
 			String openid = data.getString(0);
@@ -508,23 +577,18 @@ public class TencentILVB extends CordovaPlugin implements ILiveMemStatusLisenter
 		doQuitRoom();
     }
 
-    @Override
-    public void onResume(boolean multitasking) {
-        super.onResume(multitasking);
-        ILVLiveManager.getInstance().onResume();
-    }
-
 	@Override
     public void onDestroy()
 	{
 		super.onDestroy();
 		doQuitRoom();
-        ILVLiveManager.getInstance().shutdown();
+
+        //ILVLiveManager.getInstance().shutdown();
     }
 
 	public void doQuitRoom()
 	{
-		if(quitting)
+		if(quitting || !insideRoom)
 			return;
 
 		quitting = true;
@@ -557,14 +621,16 @@ public class TencentILVB extends CordovaPlugin implements ILiveMemStatusLisenter
 					public void onSuccess(Object data)
 					{
 						Log.i("ILVB","QUIT ROOM SUCCESS");
-
+						insideRoom = false;
 						quitting = false;
 
-						/*
-						
-						Android is Crashing on logout.
+						//this.context.stopService(new Intent("com.tencent.qalsdk.service.QalService"));
 
-						ILiveLoginManager.getInstance().iLiveLogout(new ILiveCallBack()
+						
+
+						//Android is Crashing on logout.
+
+						/*ILiveLoginManager.getInstance().iLiveLogout(new ILiveCallBack()
 						{
 							@Override
 							public void onSuccess(Object data)
