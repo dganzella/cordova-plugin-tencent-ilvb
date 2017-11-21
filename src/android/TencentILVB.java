@@ -78,24 +78,10 @@ public class TencentILVB extends CordovaPlugin implements ILiveMemStatusLisenter
 
 		public void run()
 		{
-			for (int i = 0; i < ILiveConstants.MAX_AV_VIDEO_NUM; i++)
-			{
-				AVVideoView avVideoView = avRootView.getViewByIndex(i);
-				String openid = avVideoView.getIdentifier();
-
-				if(openid != null)
-				{
-					Log.i("ILVB","FOUND VIEW WITH ID");
-					Log.i("ILVB",openid);
-				}
-			}
-
 			AVVideoView videoview = avRootView.getUserAvVideoView(openid, AVView.VIDEO_SRC_TYPE_CAMERA);
 
 			if(videoview != null)
 			{
-				Log.i("ILVB","FOUND CORRECT VIEW TO UPDATE");
-
 				if(viewPositions.containsKey(this.openid))
 				{
 					Rect r = viewPositions.get(this.openid);
@@ -109,20 +95,47 @@ public class TencentILVB extends CordovaPlugin implements ILiveMemStatusLisenter
 					Display display = ((WindowManager) context.getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay();
 					int rotation = display.getRotation();
 
-					if(this.openid.equals(ILiveLoginManager.getInstance().getMyUserId())){
-						videoview.setRotation(0);
-					}
-					else{
+					if(!this.openid.equals(ILiveLoginManager.getInstance().getMyUserId()))
+					{
 						videoview.setRotation(rotation == 1 ? 270 : 90);
 					}
-					
+
 					videoview.autoLayout();
 				}
 
-				Log.i("ILVB","FINISHED UPDATE");
+				/*if(this.openid.equals(ILiveLoginManager.getInstance().getMyUserId()))
+				{
+					Log.i("ILVB","PUBLISHER UPDATED, REUPDATING EVERYBODY ELSE");
+
+					//On manual orientation mode, when the publisher is updated, everybody else needs to be updated too :/
+					for (String userId : viewPositions.keySet())
+					{
+						if(!userId.equals(this.openid))
+						{
+							new android.os.Handler().postDelayed(
+								new DelayedUpdate(userId), 
+							1000);
+						}
+					}
+				}*/
 			}
 		}
 	}
+
+	class DelayedUpdate implements Runnable
+	{
+		public void run() {
+
+			for (String userId : viewPositions.keySet())
+			{
+				doUpdateView(userId);
+			}
+			
+			new android.os.Handler().postDelayed(
+				new DelayedUpdate(), 
+			1000);
+		}
+	};
 	
     @Override
     public void initialize(CordovaInterface cordova, CordovaWebView webView)
@@ -134,6 +147,10 @@ public class TencentILVB extends CordovaPlugin implements ILiveMemStatusLisenter
         this.context = this.activity.getApplicationContext();
 		this.selfRef = this;
 		viewPositions = new HashMap<String, Rect>();
+
+		new android.os.Handler().postDelayed(
+			new DelayedUpdate(), 
+		1000);
     }
 	
     @Override
@@ -177,8 +194,6 @@ public class TencentILVB extends CordovaPlugin implements ILiveMemStatusLisenter
 
 						viewPositions.put(id, r);
 			
-						doUpdateView(id);
-						
 						//avRootView.closeUserView(id, AVView.VIDEO_SRC_TYPE_CAMERA, true);
 						//viewPositions.remove(id);
 						triggerJSEvent("onRemoteStreamRemove", eventData);
@@ -254,7 +269,7 @@ public class TencentILVB extends CordovaPlugin implements ILiveMemStatusLisenter
 								{
 									AVVideoView avVideoView = avRootView.getViewByIndex(i);
 
-									//avVideoView.setRotate(false);
+									avVideoView.setRotate(false);
 
 									if( avVideoView.getIdentifier() == null)
 									{
@@ -263,7 +278,7 @@ public class TencentILVB extends CordovaPlugin implements ILiveMemStatusLisenter
 										avVideoView.autoLayout();
 									}
 
-									avVideoView.setRecvFirstFrameListener(new AVVideoView.RecvFirstFrameListener()
+									/*avVideoView.setRecvFirstFrameListener(new AVVideoView.RecvFirstFrameListener()
 									{
 										@Override
 										public void onFirstFrameRecved(int width, int height, int angle, String identifier)
@@ -271,26 +286,11 @@ public class TencentILVB extends CordovaPlugin implements ILiveMemStatusLisenter
 											Log.i("ILVB","FIRST FRAME LISTENER");
 											doUpdateView(identifier);
 
-											class DelayedUpdate implements Runnable
-											{
-												String openid;
-
-												DelayedUpdate(String openid)
-												{ 
-													this.openid = openid;
-												}
-
-												public void run() {
-													Log.i("ILVB","DELAYED RUN");
-													doUpdateView(this.openid);
-												}
-											};
-
 											new android.os.Handler().postDelayed(
 												new DelayedUpdate(identifier), 
 											500);
 										}
-									});
+									});*/
 								}
 							}
 						});
@@ -503,6 +503,44 @@ public class TencentILVB extends CordovaPlugin implements ILiveMemStatusLisenter
 			
 			return true;
       	}
+		else if(action.equals( "enableDisableOutput" )){
+
+			String output = data.getString(0);
+			Log.i("ILVB","OUTPUT TO CHANGE");
+			Log.i("ILVB",output);
+
+            String onOff = data.getString(1);
+			boolean turningOn = onOff.equals("on");
+
+			Log.i("ILVB","ON OR OFF");
+			Log.i("ILVB", turningOn ? "ON_" : "OFF_");
+
+			class UpdatePublishAudioVideoState implements Runnable
+			{
+				String output;
+				boolean turningOn;
+
+				UpdatePublishAudioVideoState(String output, boolean turningOn)
+				{ 
+					this.output = output;
+					this.turningOn = turningOn;
+				}
+
+				public void run()
+				{
+					if(this.output.equals("video")){
+						ILiveRoomManager.getInstance().enableCamera(ILiveConstants.FRONT_CAMERA,this.turningOn);
+					}
+					else if(this.output.equals("mic")){
+						ILiveRoomManager.getInstance().enableMic(this.turningOn);
+					}
+				}
+			}
+
+			cordova.getActivity().runOnUiThread(new UpdatePublishAudioVideoState(output, turningOn));
+
+			return true;
+		}
 		else if(action.equals("deviceRotated")){
 
 			if(avRootView != null)
@@ -516,13 +554,13 @@ public class TencentILVB extends CordovaPlugin implements ILiveMemStatusLisenter
 						int rotation = display.getRotation();
 						Log.i("ILVB","ROT ON UPDATE: " + new Integer(rotation).toString());
 						avRootView.setRemoteRotationFix(rotation == 1 ? 270 : 90);
+
+						/*for (String userId : viewPositions.keySet())
+						{
+							doUpdateView(userId);
+						}*/
 					}
 				});
-
-				for (String userId : viewPositions.keySet())
-				{
-					doUpdateView(userId);
-				}
 			}
 		}
 		else if(action.equals("updateView"))
@@ -557,7 +595,7 @@ public class TencentILVB extends CordovaPlugin implements ILiveMemStatusLisenter
 
 			viewPositions.put(openid, r);
 
-			doUpdateView(openid);
+			//doUpdateView(openid);
 
 			return true;
 		}
@@ -583,7 +621,8 @@ public class TencentILVB extends CordovaPlugin implements ILiveMemStatusLisenter
 		super.onDestroy();
 		doQuitRoom();
 
-        //ILVLiveManager.getInstance().shutdown();
+        ILVLiveManager.getInstance().shutdown();
+		ILiveRoomManager.getInstance().shutdown();
     }
 
 	public void doQuitRoom()
