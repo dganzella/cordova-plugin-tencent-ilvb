@@ -47,6 +47,7 @@
 
     <!-- 源文件 -->
     <source-file src="src/android/TencentILVB.java" target-dir="src/cn/easecloud/cordova/tencent/"/>
+	<source-file src="src/android/FaceRecognizer.java" target-dir="src/cn/easecloud/cordova/tencent/"/>
 	<source-file src="src/android/res/layout/ilvbview.xml" target-dir="res/layout" />
 
 
