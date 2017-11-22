@@ -47,6 +47,10 @@ import java.lang.reflect.*;
 import android.content.res.Configuration;
 import android.os.Bundle;
 
+import com.tencent.av.sdk.AVVideoCtrl;
+import com.tencent.av.sdk.AVVideoCtrl.RemoteVideoPreviewCallback;
+import com.tencent.av.sdk.AVVideoCtrl.LocalVideoPreviewCallback;
+
 public class TencentILVB extends CordovaPlugin implements ILiveMemStatusLisenter
 {
 	AVRootView avRootView = null;
@@ -327,6 +331,48 @@ public class TencentILVB extends CordovaPlugin implements ILiveMemStatusLisenter
                 public void onSuccess(Object data)
 				{
 					Log.i("ILVB","LOGIN SUCCESS");
+
+					cordova.getActivity().runOnUiThread(new Runnable()
+					{
+						@Override
+						public void run()
+						{
+							AVVideoCtrl videoCtrl = ILiveSDK.getInstance().getAvVideoCtrl();
+
+							videoCtrl.setLocalVideoPreviewCallback(new AVVideoCtrl.LocalVideoPreviewCallback() {
+								@Override
+								public void onFrameReceive(AVVideoCtrl.VideoFrame frame) {
+
+									Log.i("ILVB","RECEIVE LOCAL");
+
+									ILVBVideoConfigs ivc = viewConfigs.get(frame.identifier);
+
+									if(ivc != null){
+										if(ivc.f != null){
+											ivc.f.verifyNeedRecognizeFace(frame);
+										}
+									}
+
+								}
+							});
+
+							videoCtrl.setRemoteVideoPreviewCallback(new AVVideoCtrl.RemoteVideoPreviewCallback() {
+								@Override
+								public void onFrameReceive(AVVideoCtrl.VideoFrame frame) {
+
+									Log.i("ILVB","RECEIVE REMOTE");
+
+									ILVBVideoConfigs ivc = viewConfigs.get(frame.identifier);
+
+									if(ivc != null){
+										if(ivc.f != null){
+											ivc.f.verifyNeedRecognizeFace(frame);
+										}
+									}
+								}
+							});
+						}
+					});
 
                     Gson gson = new Gson();
                     callbackContext.success(gson.toJson(data));
@@ -618,16 +664,22 @@ public class TencentILVB extends CordovaPlugin implements ILiveMemStatusLisenter
 
 			if(viewConfigs.containsKey(openid))
 			{
+				Log.i("ILVB","A");
+
 				ILVBVideoConfigs ivc = viewConfigs.get(openid);
 
 				if(ivc.f == null){
+					Log.i("ILVB","B");
 					ivc.f = new FaceRecognizer(this.context, streamid, openid);
 				}
 				
+				Log.i("ILVB","C");
 				ivc.f.setToRecognizeFace(callbackContext);
 			}
 			else
 			{
+				Log.i("ILVB","D");
+
 				JSONObject resultdict = new JSONObject();
 				
 				try{
@@ -636,6 +688,7 @@ public class TencentILVB extends CordovaPlugin implements ILiveMemStatusLisenter
 				}catch (JSONException e) {}
 
 
+				Log.i("ILVB","E");
 				callbackContext.sendPluginResult(new PluginResult(PluginResult.Status.ERROR, resultdict)); 
 			}
 
@@ -667,6 +720,9 @@ public class TencentILVB extends CordovaPlugin implements ILiveMemStatusLisenter
 			return;
 
 		quitting = true;
+
+		ILiveSDK.getInstance().getAvVideoCtrl().setLocalVideoPreviewCallback(null);
+		ILiveSDK.getInstance().getAvVideoCtrl().setRemoteVideoPreviewCallback(null);
 
 		this.cordova.getActivity().runOnUiThread(new Runnable()
 		{

@@ -52,9 +52,6 @@ import com.google.android.gms.vision.face.Face;
 import com.google.android.gms.vision.face.FaceDetector;
 import com.google.android.gms.vision.face.Landmark;
 
-import com.tencent.av.sdk.AVVideoCtrl.RemoteVideoPreviewCallback;
-import com.tencent.av.sdk.AVVideoCtrl.LocalVideoPreviewCallback;
-
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
@@ -85,6 +82,8 @@ public class FaceRecognizer
 
     public FaceRecognizer(Context context, String sid, String openid)
     {
+        Log.i("ILVB","I 1");
+
         this.mContext = context;
         this.mSid = sid;
 
@@ -96,41 +95,18 @@ public class FaceRecognizer
             .setLandmarkType(FaceDetector.ALL_LANDMARKS)
             .build();
         }
+    }
 
-        AVVideoCtrl videoCtrl = ILiveSDK.getInstance().getAvVideoCtrl();
-
-        if(openid.equals(ILiveLoginManager.getInstance().getMyUserId()))
+    public void verifyNeedRecognizeFace(AVVideoCtrl.VideoFrame frame)
+    {
+        if(this.mShouldRecognizeFaceOnNextFrame)
         {
-            videoCtrl.setLocalVideoPreviewCallback(new AVVideoCtrl.LocalVideoPreviewCallback() {
-                @Override
-                public void onFrameReceive(AVVideoCtrl.VideoFrame frame) {
-
-                     if(mShouldRecognizeFaceOnNextFrame){
-                         mShouldRecognizeFaceOnNextFrame = false;
-                        try{
-                            DoRecognizeFace(frame);
-                        } catch (JSONException e){
-                            Log.e("ILVB", "JSONException"+e.getMessage());
-                        } 
-                     }
-                }
-            });
-        }
-        else
-        {
-            videoCtrl.setRemoteVideoPreviewCallback(new AVVideoCtrl.RemoteVideoPreviewCallback() {
-                @Override
-                public void onFrameReceive(AVVideoCtrl.VideoFrame frame) {
-                    if(mShouldRecognizeFaceOnNextFrame){
-                        mShouldRecognizeFaceOnNextFrame = false;  
-                        try{
-                            DoRecognizeFace(frame);
-                        } catch (JSONException e){
-                            Log.e("ILVB", "JSONException"+e.getMessage());
-                        } 
-                     }
-                }
-            });
+            this.mShouldRecognizeFaceOnNextFrame = false;  
+            try{
+                this.DoRecognizeFace(frame);
+            } catch (JSONException e){
+                Log.e("ILVB", "JSONException"+e.getMessage());
+            }
         }
     }
 
@@ -178,6 +154,8 @@ public class FaceRecognizer
 
     public void DoRecognizeFace(AVVideoCtrl.VideoFrame frame) throws JSONException
     {
+        Log.i("ILVB","START RECOGNIZER");
+
         synchronized(fdetector)
         {
             int width = frame.width;
