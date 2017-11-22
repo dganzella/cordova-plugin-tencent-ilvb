@@ -1,4 +1,3 @@
-cordova.define("cordova-plugin-tencent-ilvb.TencentILVB", function(require, exports, module) {
 module.exports = {
 	
     eventList: null,
@@ -109,5 +108,3 @@ module.exports = {
 			[]);
 	}
 };
-
-});
