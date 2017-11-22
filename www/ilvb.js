@@ -40,6 +40,15 @@ module.exports = {
             ['mic','off']);
     },
 	
+	recognizeFace: function(openid, success, error){
+	cordova.exec(
+		success,
+		error,
+		"TencentILVB",
+		'recognizeFace',
+		[openid]);
+    },
+	
     init: function (listenerList, config) {
 		
 		window.WebRTCAPI.eventList = listenerList;
