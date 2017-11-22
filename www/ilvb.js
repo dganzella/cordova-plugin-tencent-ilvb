@@ -40,13 +40,13 @@ module.exports = {
             ['mic','off']);
     },
 	
-	recognizeFace: function(openid, success, error){
-	cordova.exec(
-		success,
-		error,
-		"TencentILVB",
-		'recognizeFace',
-		[openid]);
+    recognizeFace: function(streamid, openid, success, error){
+        cordova.exec(
+            success,
+            error,
+            "TencentILVB",
+            'recognizeFace',
+            [streamid, openid]);
     },
 	
     init: function (listenerList, config) {
