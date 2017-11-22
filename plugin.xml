@@ -32,6 +32,7 @@
 	
 	<framework src="com.tencent.livesdk:livesdk:1.1.4" />
 	<framework src="com.tencent.ilivesdk:ilivesdk:1.7.1" />
+	<framework src="com.google.android.gms:play-services-vision:11.0.4" />
 
     <!-- 腾讯直播 SDK -->
     <source-file src="src/android/libs/cos-sdk-android-1.4.3.jar" target-dir="libs" />
