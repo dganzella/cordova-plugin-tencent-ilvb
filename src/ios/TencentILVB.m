@@ -250,6 +250,116 @@
     }
 }
 
+- (UIImage *) screenShotImageWithView :(UIView *) view
+{
+    UIGraphicsBeginImageContextWithOptions(view.bounds.size, NO, [UIScreen mainScreen].scale);
+    
+    [view drawViewHierarchyInRect:view.bounds afterScreenUpdates:YES];
+    
+    UIImage *image = UIGraphicsGetImageFromCurrentImageContext();
+    UIGraphicsEndImageContext();
+    return image;
+}
+
+-(void)recognizeFace:(CDVInvokedUrlCommand*)command
+{
+    NSString* sid = [[command arguments] objectAtIndex:0];
+    NSString* openid = [[command arguments] objectAtIndex:1];
+    
+    ILiveRenderView * targetView = [[TILLiveManager getInstance] getAVRenderView:openid srcType:QAVVIDEO_SRC_TYPE_CAMERA];
+    
+    if(targetView != nil )
+    {
+        CIContext *context = [CIContext context];
+        
+        NSDictionary *opts = @{ CIDetectorAccuracy : CIDetectorAccuracyHigh };
+        
+        CIDetector *detector = [CIDetector detectorOfType:CIDetectorTypeFace
+                                                  context:context
+                                                  options:opts];
+        
+        UIImage * ilvbframe = [self screenShotImageWithView: targetView];
+        
+        [self.commandDelegate runInBackground:^{
+            
+            CDVPluginResult* pluginResult;
+            
+            CIImage * finalimage = [[CIImage alloc] initWithCGImage: ilvbframe.CGImage options:nil];
+            //1 means landscape and not inverted
+            NSDictionary * optsfeatures = [NSDictionary dictionaryWithObject: [NSNumber numberWithInt:1] forKey: CIDetectorImageOrientation];
+            
+            NSArray * features = [detector featuresInImage:finalimage options:optsfeatures];
+            
+            float finalwidth = CGImageGetWidth(ilvbframe.CGImage);
+            float finalheight = CGImageGetHeight(ilvbframe.CGImage);
+            
+            if(features.count > 0)
+            {
+                CIFaceFeature * face = features[0];
+                
+                if (face.hasLeftEyePosition && face.hasRightEyePosition)
+                {
+                    //move the eyes up by 2.5%, its the error between the web and the native ios face detector
+                    float invertedLeftY = finalheight*0.975 -  face.leftEyePosition.y;
+                    float invertedRightY = finalheight*0.975 -  face.rightEyePosition.y;
+                    
+                    float invertedLeftX = finalwidth - face.leftEyePosition.x;
+                    float invertedRightX = finalwidth - face.rightEyePosition.x;
+                    
+                    float diffx =  invertedLeftX - invertedRightX;
+                    float diffy = invertedLeftY - invertedRightY;
+                    
+                    float rotation = atan2(diffy, fabsf(diffx)) * 180.0 / 3.1415926;
+                    
+                    float distance = sqrt( diffx*diffx + diffy*diffy )/finalwidth * 100.0;
+                    
+                    float midPointX = ((invertedLeftX + invertedRightX)/2.0)/finalwidth * 100.0;
+                    float midPointY = ((invertedLeftY + invertedRightY)/2.0)/finalheight * 100.0;
+                    
+                    NSMutableDictionary * featuresdict = [[NSMutableDictionary alloc] initWithCapacity:5];
+                    
+                    [featuresdict setObject: [NSNumber numberWithFloat:distance] forKey:@"eyesDistance"];
+                    [featuresdict setObject: [NSNumber numberWithFloat:midPointX] forKey:@"midPointX"];
+                    [featuresdict setObject: [NSNumber numberWithFloat:midPointY] forKey:@"midPointY"];
+                    [featuresdict setObject: [NSNumber numberWithFloat:rotation] forKey:@"rotation"];
+                    [featuresdict setObject: sid forKey:@"streamId"];
+                    
+                    pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary: featuresdict];
+                    [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+                }
+                else
+                {
+                    NSMutableDictionary * errorDict = [[NSMutableDictionary alloc] initWithCapacity:2];
+                    [errorDict setObject: sid forKey:@"streamId"];
+                    [errorDict setObject: [NSString stringWithFormat:@"DIDNT FIND EYES"] forKey:@"error"];
+                    
+                    pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsDictionary:errorDict];
+                    [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+                }
+            }
+            else
+            {
+                NSMutableDictionary * errorDict = [[NSMutableDictionary alloc] initWithCapacity:2];
+                [errorDict setObject: sid forKey:@"streamId"];
+                [errorDict setObject: [NSString stringWithFormat:@"NO FACE DETECTED"] forKey:@"error"];
+                
+                pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsDictionary: errorDict];
+                [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+            }
+            
+        }];
+    }
+    else
+    {
+        NSMutableDictionary * errorDict = [[NSMutableDictionary alloc] initWithCapacity:2];
+        [errorDict setObject: sid forKey:@"streamId"];
+        [errorDict setObject: [NSString stringWithFormat:@"UIVIEW FOR STREAMID NOT FOUND"] forKey:@"error"];
+        
+        CDVPluginResult * pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsDictionary:errorDict];
+        [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+    }
+}
+
 - (void)updateView:(CDVInvokedUrlCommand*)command
 {
     NSLog(@"UPDATE VIEW");
@@ -288,6 +398,9 @@
         
         renderview.autoRotate = NO;
     }
+    
+    
+    [renderview.layer setAffineTransform:CGAffineTransformMakeScale(-1, 1)]; //flip X for publisher
     
     [self updateRotation:openid];
 }
@@ -345,4 +458,3 @@
 
 
 @end
-
