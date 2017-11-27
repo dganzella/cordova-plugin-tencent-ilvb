@@ -48,11 +48,14 @@ import android.content.res.Configuration;
 import android.os.Bundle;
 
 import com.tencent.av.sdk.AVVideoCtrl;
-import com.tencent.av.sdk.AVVideoCtrl.RemoteVideoPreviewCallback;
-import com.tencent.av.sdk.AVVideoCtrl.LocalVideoPreviewCallback;
+import com.tencent.av.sdk.AVVideoCtrl.LocalVideoPreProcessCallback;
+//import com.tencent.av.sdk.AVVideoCtrl.RemoteVideoPreProcessCallback;
 
 import android.support.annotation.RequiresApi;
 import android.os.Build;
+
+import com.tencent.ilivefilter.TILFilter;
+import com.tencent.liteav.basic.listener.TXINotifyListener;
 
 public class TencentILVB extends CordovaPlugin implements ILiveMemStatusLisenter
 {
@@ -63,6 +66,7 @@ public class TencentILVB extends CordovaPlugin implements ILiveMemStatusLisenter
     private CordovaInterface cordova;
     private CordovaWebView webView;
 	private HashMap<String, ILVBVideoConfigs> viewConfigs;
+	private TILFilter videoFilter;
 
 	public CallbackContext eventCallbackContext;
 	public TencentILVB selfRef;
@@ -678,8 +682,8 @@ public class TencentILVB extends CordovaPlugin implements ILiveMemStatusLisenter
 
 		quitting = true;
 
-		ILiveSDK.getInstance().getAvVideoCtrl().setLocalVideoPreviewCallback(null);
-		ILiveSDK.getInstance().getAvVideoCtrl().setRemoteVideoPreviewCallback(null);
+		ILiveSDK.getInstance().getAvVideoCtrl().setLocalVideoPreProcessCallback(null);
+		//ILiveSDK.getInstance().getAvVideoCtrl().setRemoteVideoPreProcessCallback(null);
 
 		this.cordova.getActivity().runOnUiThread(new Runnable()
 		{
@@ -709,6 +713,13 @@ public class TencentILVB extends CordovaPlugin implements ILiveMemStatusLisenter
 					public void onSuccess(Object data)
 					{
 						Log.i("ILVB","QUIT ROOM SUCCESS");
+
+						if (videoFilter != null) {
+							videoFilter.setFilter(-1);
+							videoFilter.destroyFilter();
+							videoFilter = null;
+						}
+
 						insideRoom = false;
 						quitting = false;
 
@@ -776,6 +787,22 @@ public class TencentILVB extends CordovaPlugin implements ILiveMemStatusLisenter
 
 	public void RegisterPreviews()
 	{
+		
+		videoFilter = new TILFilter(this.context);
+		videoFilter.setFilter(5);
+
+		videoFilter.setNotifyListener(new TXINotifyListener(){
+			@Override
+			public void onNotifyEvent (final int event, final Bundle param) {
+				Log.i("ILVB", "recv event id " + event);
+				if (TILFilter.EventVideoProcess.EVENT_VIDEOPROCESS_FACERECOGNISE_SUCESS == event){
+					Log.i("ILVB", "Face Recognise sucess");
+				}else if (TILFilter.EventVideoProcess.EVENT_VIDEOPROCESS_FACERECOGNISE_FAILED == event){
+					Log.i("ILVB", "Face Recognise failed");
+				}
+			}
+		});
+
 		cordova.getActivity().runOnUiThread(new Runnable()
 		{
 			@Override
@@ -785,7 +812,7 @@ public class TencentILVB extends CordovaPlugin implements ILiveMemStatusLisenter
 
 				boolean localSuccess, remoteSuccess;
 
-				localSuccess = videoCtrl.setLocalVideoPreviewCallback(new AVVideoCtrl.LocalVideoPreviewCallback()
+				localSuccess = videoCtrl.setLocalVideoPreProcessCallback(new AVVideoCtrl.LocalVideoPreProcessCallback()
 				{
 					@RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR2)
 					@Override
@@ -799,10 +826,11 @@ public class TencentILVB extends CordovaPlugin implements ILiveMemStatusLisenter
 							}
 						}
 
+						videoFilter.processData(frame.data, frame.dataLen, frame.width, frame.height, frame.srcType);
 					}
 				});
 
-				remoteSuccess = videoCtrl.setRemoteVideoPreviewCallback(new AVVideoCtrl.RemoteVideoPreviewCallback()
+				/*remoteSuccess = videoCtrl.setRemoteVideoPreProcessCallback(new AVVideoCtrl.RemoteVideoPreProcessCallback()
 				{
 					@RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR2)
 					@Override
@@ -815,14 +843,16 @@ public class TencentILVB extends CordovaPlugin implements ILiveMemStatusLisenter
 								ivc.f.verifyNeedRecognizeFace(frame);
 							}
 						}
-					}
-				});
 
-				Log.i("ILVB","LOCAL PREVIEW: ");
+						videoFilter.processData(frame.data, frame.dataLen, frame.width, frame.height, frame.srcType);
+					}
+				});*/
+
+				Log.i("ILVB","LOCAL PRE PROCESS: ");
 				Log.i("ILVB", localSuccess ? "SUCCESS" : "FAIL");
 
-				Log.i("ILVB","REMOTE PREVIEW: ");
-				Log.i("ILVB", remoteSuccess ? "SUCCESS" : "FAIL");
+				//Log.i("ILVB","REMOTE PRE PROCESS: ");
+				//Log.i("ILVB", remoteSuccess ? "SUCCESS" : "FAIL");
 			}
 		});
 	}
