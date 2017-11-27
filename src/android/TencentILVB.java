@@ -51,6 +51,9 @@ import com.tencent.av.sdk.AVVideoCtrl;
 import com.tencent.av.sdk.AVVideoCtrl.RemoteVideoPreviewCallback;
 import com.tencent.av.sdk.AVVideoCtrl.LocalVideoPreviewCallback;
 
+import android.support.annotation.RequiresApi;
+import android.os.Build;
+
 public class TencentILVB extends CordovaPlugin implements ILiveMemStatusLisenter
 {
 	AVRootView avRootView = null;
@@ -332,48 +335,6 @@ public class TencentILVB extends CordovaPlugin implements ILiveMemStatusLisenter
 				{
 					Log.i("ILVB","LOGIN SUCCESS");
 
-					cordova.getActivity().runOnUiThread(new Runnable()
-					{
-						@Override
-						public void run()
-						{
-							AVVideoCtrl videoCtrl = ILiveSDK.getInstance().getAvVideoCtrl();
-
-							videoCtrl.setLocalVideoPreviewCallback(new AVVideoCtrl.LocalVideoPreviewCallback() {
-								@Override
-								public void onFrameReceive(AVVideoCtrl.VideoFrame frame) {
-
-									Log.i("ILVB","RECEIVE LOCAL");
-
-									ILVBVideoConfigs ivc = viewConfigs.get(frame.identifier);
-
-									if(ivc != null){
-										if(ivc.f != null){
-											ivc.f.verifyNeedRecognizeFace(frame);
-										}
-									}
-
-								}
-							});
-
-							videoCtrl.setRemoteVideoPreviewCallback(new AVVideoCtrl.RemoteVideoPreviewCallback() {
-								@Override
-								public void onFrameReceive(AVVideoCtrl.VideoFrame frame) {
-
-									Log.i("ILVB","RECEIVE REMOTE");
-
-									ILVBVideoConfigs ivc = viewConfigs.get(frame.identifier);
-
-									if(ivc != null){
-										if(ivc.f != null){
-											ivc.f.verifyNeedRecognizeFace(frame);
-										}
-									}
-								}
-							});
-						}
-					});
-
                     Gson gson = new Gson();
                     callbackContext.success(gson.toJson(data));
                 }
@@ -458,6 +419,8 @@ public class TencentILVB extends CordovaPlugin implements ILiveMemStatusLisenter
 								Log.i("ILVB","CREATE ROOM SUCCESS");
 								insideRoom = true;
 
+								RegisterPreviews();
+
 								Gson gson = new Gson();
 								callbackContext.success(gson.toJson(data));
 							}
@@ -509,6 +472,8 @@ public class TencentILVB extends CordovaPlugin implements ILiveMemStatusLisenter
 							public void onSuccess(Object data) {
 								Log.i("ILVB","JOIN ROOM SUCCESS");
 								insideRoom = true;
+
+								RegisterPreviews();
 
 								Gson gson = new Gson();
 								callbackContext.success(gson.toJson(data));
@@ -664,22 +629,16 @@ public class TencentILVB extends CordovaPlugin implements ILiveMemStatusLisenter
 
 			if(viewConfigs.containsKey(openid))
 			{
-				Log.i("ILVB","A");
-
 				ILVBVideoConfigs ivc = viewConfigs.get(openid);
 
 				if(ivc.f == null){
-					Log.i("ILVB","B");
 					ivc.f = new FaceRecognizer(this.context, streamid, openid);
 				}
 				
-				Log.i("ILVB","C");
 				ivc.f.setToRecognizeFace(callbackContext);
 			}
 			else
 			{
-				Log.i("ILVB","D");
-
 				JSONObject resultdict = new JSONObject();
 				
 				try{
@@ -687,8 +646,6 @@ public class TencentILVB extends CordovaPlugin implements ILiveMemStatusLisenter
 					resultdict.put("error", "VIDEO NOT FOUND IN HASHMAP, NEEDS TO UPDATE VIEW ONCE AT LEAST");
 				}catch (JSONException e) {}
 
-
-				Log.i("ILVB","E");
 				callbackContext.sendPluginResult(new PluginResult(PluginResult.Status.ERROR, resultdict)); 
 			}
 
@@ -815,5 +772,58 @@ public class TencentILVB extends CordovaPlugin implements ILiveMemStatusLisenter
 	public void doUpdateView(String openid)
 	{
 		cordova.getActivity().runOnUiThread(new UpdateViewRunnable(openid));
+	}
+
+	public void RegisterPreviews()
+	{
+		cordova.getActivity().runOnUiThread(new Runnable()
+		{
+			@Override
+			public void run()
+			{
+				AVVideoCtrl videoCtrl = ILiveSDK.getInstance().getAvVideoCtrl();
+
+				boolean localSuccess, remoteSuccess;
+
+				localSuccess = videoCtrl.setLocalVideoPreviewCallback(new AVVideoCtrl.LocalVideoPreviewCallback()
+				{
+					@RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR2)
+					@Override
+					public void onFrameReceive(AVVideoCtrl.VideoFrame frame) {
+
+						ILVBVideoConfigs ivc = viewConfigs.get(frame.identifier);
+
+						if(ivc != null){
+							if(ivc.f != null){
+								ivc.f.verifyNeedRecognizeFace(frame);
+							}
+						}
+
+					}
+				});
+
+				remoteSuccess = videoCtrl.setRemoteVideoPreviewCallback(new AVVideoCtrl.RemoteVideoPreviewCallback()
+				{
+					@RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR2)
+					@Override
+					public void onFrameReceive(AVVideoCtrl.VideoFrame frame) {
+
+						ILVBVideoConfigs ivc = viewConfigs.get(frame.identifier);
+
+						if(ivc != null){
+							if(ivc.f != null){
+								ivc.f.verifyNeedRecognizeFace(frame);
+							}
+						}
+					}
+				});
+
+				Log.i("ILVB","LOCAL PREVIEW: ");
+				Log.i("ILVB", localSuccess ? "SUCCESS" : "FAIL");
+
+				Log.i("ILVB","REMOTE PREVIEW: ");
+				Log.i("ILVB", remoteSuccess ? "SUCCESS" : "FAIL");
+			}
+		});
 	}
 }

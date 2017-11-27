@@ -82,8 +82,6 @@ public class FaceRecognizer
 
     public FaceRecognizer(Context context, String sid, String openid)
     {
-        Log.i("ILVB","I 1");
-
         this.mContext = context;
         this.mSid = sid;
 
