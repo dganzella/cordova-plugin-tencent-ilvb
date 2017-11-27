@@ -71,6 +71,8 @@ import com.tencent.av.sdk.AVVideoCtrl;
 import com.tencent.av.sdk.AVVideoCtrl.RemoteVideoPreviewCallback;
 import com.tencent.av.sdk.AVVideoCtrl.LocalVideoPreviewCallback;
 
+import android.graphics.Matrix;
+
 public class FaceRecognizer
 {
     static private FaceDetector fdetector;
@@ -150,10 +152,15 @@ public class FaceRecognizer
         }
     }
 
+    public Bitmap RotateBitmap(Bitmap source, float angle)
+    {
+      Matrix matrix = new Matrix();
+      matrix.postRotate(angle);
+      return Bitmap.createBitmap(source, 0, 0, source.getWidth(), source.getHeight(), matrix, true);
+    }
+
     public void DoRecognizeFace(AVVideoCtrl.VideoFrame frame) throws JSONException
     {
-        Log.i("ILVB","START RECOGNIZER");
-
         synchronized(fdetector)
         {
             int width = frame.width;
@@ -172,9 +179,19 @@ public class FaceRecognizer
             // Initialize the bitmap, with the replaced color
             Bitmap bmp = Bitmap.createBitmap(intArray, width, height, Bitmap.Config.ARGB_8888);
 
+            Bitmap finalbmp = bmp;
+
+            Display display = ((WindowManager) this.mContext.getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay();
+            int displayrot = display.getRotation();
+
+            if(displayrot == 3)
+            {
+                finalbmp = this.RotateBitmap(bmp, 180);
+            }
+
             if(fdetector.isOperational())
             {
-                com.google.android.gms.vision.Frame visionframe = new com.google.android.gms.vision.Frame.Builder().setBitmap(bmp).build();
+                com.google.android.gms.vision.Frame visionframe = new com.google.android.gms.vision.Frame.Builder().setBitmap(finalbmp).build();
 
                 SparseArray<Face> faces = fdetector.detect(visionframe);
             
@@ -203,14 +220,14 @@ public class FaceRecognizer
 
                         if(found_left_eye && found_right_eye)
                         {
-                            //    left_eye = new PointF(width-left_eye.x, left_eye.y*0.975f);
-                            //    right_eye = new PointF(width-right_eye.x, right_eye.y*0.975f);
+                            left_eye = new PointF(width-left_eye.x, left_eye.y*0.975f);
+                            right_eye = new PointF(width-right_eye.x, right_eye.y*0.975f);
                          
                             PointF diff = new PointF(left_eye.x - right_eye.x, left_eye.y - right_eye.y);
                             
                             double rotation = Math.atan2(diff.y, Math.abs(diff.x)) * 180.0 / Math.PI;
 
-                            //rotation = -rotation;
+                            rotation = -rotation;
 
                             double distance = Math.sqrt( diff.x*diff.x + diff.y*diff.y )/((double)width) * 100.0;
                             

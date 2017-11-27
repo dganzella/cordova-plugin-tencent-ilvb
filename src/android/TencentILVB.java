@@ -49,7 +49,6 @@ import android.os.Bundle;
 
 import com.tencent.av.sdk.AVVideoCtrl;
 import com.tencent.av.sdk.AVVideoCtrl.LocalVideoPreProcessCallback;
-//import com.tencent.av.sdk.AVVideoCtrl.RemoteVideoPreProcessCallback;
 
 import android.support.annotation.RequiresApi;
 import android.os.Build;
@@ -626,16 +625,20 @@ public class TencentILVB extends CordovaPlugin implements ILiveMemStatusLisenter
 		{
 			String streamid = data.getString(0);
 
-			Log.i("ILVB","RECOGNIZE FACE: ");
-			Log.i("ILVB",streamid);
+			//Log.i("ILVB","REGISTER RECOGNIZE FACE: ");
+			//Log.i("ILVB",streamid);
 
 			String openid = data.getString(1);
+
+			//Log.i("ILVB","REGISTER RECOGNIZE FACE, OPENID: ");
+			//Log.i("ILVB",openid);
 
 			if(viewConfigs.containsKey(openid))
 			{
 				ILVBVideoConfigs ivc = viewConfigs.get(openid);
 
-				if(ivc.f == null){
+				if(ivc.f == null)
+				{
 					ivc.f = new FaceRecognizer(this.context, streamid, openid);
 				}
 				
@@ -788,7 +791,7 @@ public class TencentILVB extends CordovaPlugin implements ILiveMemStatusLisenter
 	public void RegisterPreviews()
 	{
 		
-		videoFilter = new TILFilter(this.context);
+		/*videoFilter = new TILFilter(this.context);
 		videoFilter.setFilter(5);
 
 		videoFilter.setNotifyListener(new TXINotifyListener(){
@@ -801,7 +804,7 @@ public class TencentILVB extends CordovaPlugin implements ILiveMemStatusLisenter
 					Log.i("ILVB", "Face Recognise failed");
 				}
 			}
-		});
+		});*/
 
 		cordova.getActivity().runOnUiThread(new Runnable()
 		{
@@ -818,15 +821,17 @@ public class TencentILVB extends CordovaPlugin implements ILiveMemStatusLisenter
 					@Override
 					public void onFrameReceive(AVVideoCtrl.VideoFrame frame) {
 
-						ILVBVideoConfigs ivc = viewConfigs.get(frame.identifier);
+						ILVBVideoConfigs ivc = viewConfigs.get(ILiveLoginManager.getInstance().getMyUserId());
 
-						if(ivc != null){
-							if(ivc.f != null){
+						if(ivc != null)
+						{
+							if(ivc.f != null)
+							{
 								ivc.f.verifyNeedRecognizeFace(frame);
 							}
 						}
 
-						videoFilter.processData(frame.data, frame.dataLen, frame.width, frame.height, frame.srcType);
+						//videoFilter.processData(frame.data, frame.dataLen, frame.width, frame.height, frame.srcType);
 					}
 				});
 
