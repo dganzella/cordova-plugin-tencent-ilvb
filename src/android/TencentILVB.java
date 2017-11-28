@@ -49,6 +49,7 @@ import android.os.Bundle;
 
 import com.tencent.av.sdk.AVVideoCtrl;
 import com.tencent.av.sdk.AVVideoCtrl.LocalVideoPreProcessCallback;
+import com.tencent.av.sdk.AVVideoCtrl.RemoteVideoPreviewCallback;
 
 import android.support.annotation.RequiresApi;
 import android.os.Build;
@@ -294,12 +295,28 @@ public class TencentILVB extends CordovaPlugin implements ILiveMemStatusLisenter
 										@Override
 										public void onFirstFrameRecved(int width, int height, int angle, String identifier)
 										{
-											Log.i("ILVB","FIRST FRAME LISTENER");
-											doUpdateView(identifier);
+											class UnlockRend implements Runnable
+											{
+												String identifier;
 
-											new android.os.Handler().postDelayed(
-												new DelayedUpdate(identifier), 
-											500);
+												UnlockRend(String identifier)
+												{
+													this.identifier = identifier;
+												}
+
+												@Override
+												public void run()
+												{
+													AVVideoView videoview = avRootView.getUserAvVideoView(identifier, AVView.VIDEO_SRC_TYPE_CAMERA);
+
+													if(videoview != null)
+													{
+														videoview.unlockRendering();
+													}
+												}
+											}
+
+											cordova.getActivity().runOnUiThread(new UnlockRend(identifier));
 										}
 									});*/
 								}
@@ -639,7 +656,7 @@ public class TencentILVB extends CordovaPlugin implements ILiveMemStatusLisenter
 
 				if(ivc.f == null)
 				{
-					ivc.f = new FaceRecognizer(this.context, streamid, openid);
+					ivc.f = new FaceRecognizer(this.context, streamid, openid, openid.equals(ILiveLoginManager.getInstance().getMyUserId() ) );
 				}
 				
 				ivc.f.setToRecognizeFace(callbackContext);
@@ -827,6 +844,7 @@ public class TencentILVB extends CordovaPlugin implements ILiveMemStatusLisenter
 						{
 							if(ivc.f != null)
 							{
+								//Bitmap b = FaceRecognizer.GenerateBitmap(frame);
 								ivc.f.verifyNeedRecognizeFace(frame);
 							}
 						}
@@ -835,28 +853,34 @@ public class TencentILVB extends CordovaPlugin implements ILiveMemStatusLisenter
 					}
 				});
 
-				/*remoteSuccess = videoCtrl.setRemoteVideoPreProcessCallback(new AVVideoCtrl.RemoteVideoPreProcessCallback()
+				/*remoteSuccess = videoCtrl.setRemoteVideoPreviewCallback(new AVVideoCtrl.RemoteVideoPreviewCallback()
 				{
 					@RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR2)
 					@Override
-					public void onFrameReceive(AVVideoCtrl.VideoFrame frame) {
-
+					public void onFrameReceive(AVVideoCtrl.VideoFrame frame)
+					{
 						ILVBVideoConfigs ivc = viewConfigs.get(frame.identifier);
 
-						if(ivc != null){
-							if(ivc.f != null){
-								ivc.f.verifyNeedRecognizeFace(frame);
+						AVVideoView videoview = avRootView.getUserAvVideoView(openid, AVView.VIDEO_SRC_TYPE_CAMERA);
+
+						Bitmap b = FaceRecognizer.GenerateBitmap(frame);
+						
+						videoview.setBackground(b);
+
+						if(ivc != null)
+						{
+							if(ivc.f != null)
+							{
+								ivc.f.verifyNeedRecognizeFace(b);
 							}
 						}
-
-						videoFilter.processData(frame.data, frame.dataLen, frame.width, frame.height, frame.srcType);
 					}
 				});*/
 
 				Log.i("ILVB","LOCAL PRE PROCESS: ");
 				Log.i("ILVB", localSuccess ? "SUCCESS" : "FAIL");
 
-				//Log.i("ILVB","REMOTE PRE PROCESS: ");
+				//Log.i("ILVB","REMOTE PREVIEW: ");
 				//Log.i("ILVB", remoteSuccess ? "SUCCESS" : "FAIL");
 			}
 		});

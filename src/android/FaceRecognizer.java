@@ -80,12 +80,13 @@ public class FaceRecognizer
     Context mContext;
     CallbackContext mCallbackContext;
     String mSid;
-    boolean mShouldRecognizeFaceOnNextFrame = false;
+    boolean mShouldRecognizeFaceOnNextFrame = false, isPublisher;
 
-    public FaceRecognizer(Context context, String sid, String openid)
+    public FaceRecognizer(Context context, String sid, String openid, boolean isPublisher)
     {
         this.mContext = context;
         this.mSid = sid;
+        this.isPublisher = isPublisher;
 
         if(fdetector == null)
         {
@@ -152,46 +153,54 @@ public class FaceRecognizer
         }
     }
 
-    public Bitmap RotateBitmap(Bitmap source, float angle)
+    public static Bitmap RotateBitmap(Bitmap source, float angle)
     {
       Matrix matrix = new Matrix();
       matrix.postRotate(angle);
       return Bitmap.createBitmap(source, 0, 0, source.getWidth(), source.getHeight(), matrix, true);
     }
 
+    public static Bitmap GenerateBitmap(Context context, AVVideoCtrl.VideoFrame frame)
+    {
+        int width = frame.width;
+        int height = frame.height;
+        int half_width = (width + 1) >> 1;
+        int half_height = (height +1) >> 1;
+        int y_size = width * height;
+        int uv_size = half_width * half_height;
+
+        byte []yuv = frame.data;
+        int[] intArray = new int[width*height];
+
+        // Decode Yuv data to integer array
+        decodeYUV420(intArray, yuv, width, height);
+
+        // Initialize the bitmap, with the replaced color
+        Bitmap bmp = Bitmap.createBitmap(intArray, width, height, Bitmap.Config.ARGB_8888);
+
+        Bitmap finalbmp = bmp;
+
+        Display display = ((WindowManager) context.getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay();
+        int displayrot = display.getRotation();
+
+        if(displayrot == 3)
+        {
+            finalbmp = RotateBitmap(bmp, 180);
+            bmp.recycle();
+        }
+
+        return finalbmp;
+    }
+
     public void DoRecognizeFace(AVVideoCtrl.VideoFrame frame) throws JSONException
     {
         synchronized(fdetector)
         {
-            int width = frame.width;
-            int height = frame.height;
-            int half_width = (width + 1) >> 1;
-            int half_height = (height +1) >> 1;
-            int y_size = width * height;
-            int uv_size = half_width * half_height;
-
-            byte []yuv = frame.data;
-            int[] intArray = new int[width*height];
-
-            // Decode Yuv data to integer array
-            decodeYUV420(intArray, yuv, width, height);
-
-            // Initialize the bitmap, with the replaced color
-            Bitmap bmp = Bitmap.createBitmap(intArray, width, height, Bitmap.Config.ARGB_8888);
-
-            Bitmap finalbmp = bmp;
-
-            Display display = ((WindowManager) this.mContext.getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay();
-            int displayrot = display.getRotation();
-
-            if(displayrot == 3)
-            {
-                finalbmp = this.RotateBitmap(bmp, 180);
-            }
-
             if(fdetector.isOperational())
             {
-                com.google.android.gms.vision.Frame visionframe = new com.google.android.gms.vision.Frame.Builder().setBitmap(finalbmp).build();
+                Bitmap bitmap = GenerateBitmap(this.mContext, frame);
+
+                com.google.android.gms.vision.Frame visionframe = new com.google.android.gms.vision.Frame.Builder().setBitmap(bitmap).build();
 
                 SparseArray<Face> faces = fdetector.detect(visionframe);
             
@@ -220,8 +229,8 @@ public class FaceRecognizer
 
                         if(found_left_eye && found_right_eye)
                         {
-                            left_eye = new PointF(width-left_eye.x, left_eye.y*0.975f);
-                            right_eye = new PointF(width-right_eye.x, right_eye.y*0.975f);
+                            left_eye = new PointF(bitmap.getWidth()-left_eye.x, left_eye.y*0.975f);
+                            right_eye = new PointF(bitmap.getWidth()-right_eye.x, right_eye.y*0.975f);
                          
                             PointF diff = new PointF(left_eye.x - right_eye.x, left_eye.y - right_eye.y);
                             
@@ -229,11 +238,11 @@ public class FaceRecognizer
 
                             rotation = -rotation;
 
-                            double distance = Math.sqrt( diff.x*diff.x + diff.y*diff.y )/((double)width) * 100.0;
+                            double distance = Math.sqrt( diff.x*diff.x + diff.y*diff.y )/((double)bitmap.getWidth()) * 100.0;
                             
                             PointF midPoint = new PointF ( 
-                                            (float) ( ((left_eye.x + right_eye.x)/2.0)/((double)width)  * 100.0 ),
-                                            (float) ( ((left_eye.y + right_eye.y)/2.0)/((double)height) * 100.0 )
+                                            (float) ( ((left_eye.x + right_eye.x)/2.0)/((double)bitmap.getWidth())  * 100.0 ),
+                                            (float) ( ((left_eye.y + right_eye.y)/2.0)/((double)bitmap.getHeight()) * 100.0 )
                                             );
                             
                             JSONObject resultdict = new JSONObject();
